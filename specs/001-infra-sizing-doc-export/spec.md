@@ -106,15 +106,14 @@ archive file is produced containing all generated PDFs.
 - **Product with no sizes / size with no flavours / flavour with no servers**: Fail
   hard for that product with a clear validation error; continue processing remaining
   products (FR-008a).
-- How does the system handle a server with no disk partitions?
+- **Server with no disk partitions**: A server definition with an empty or absent `disk` list is a validation error. The build MUST fail that product with a clear error and continue processing remaining products (consistent with FR-008a).
 - **Missing product-specific preamble or suffix file**: Fail hard for that product
   with a clear error; continue remaining products (FR-008a).
 - **Missing `theme.yml`**: Fail the entire build immediately with a clear error
   before processing any product.
-- What happens if `infra/products.json` is missing or malformed?
-- What happens if a product listed in `products.json` has no corresponding folder under `infra/`?
-- What happens if a shortname in `products.json` does not match any folder name?
-- How does the build behave when only one product is defined (single-product build)?
+- **Missing or malformed `infra/products.json`**: Fail the entire build immediately with a clear error before processing any product (same behaviour as a missing `theme.yml`). No archive is produced.
+- **Product folder missing or shortname mismatch**: If a shortname listed in `products.json` has no corresponding directory under `infra/`, fail that product with a clear error and continue processing remaining products (consistent with FR-008a).
+- **Single-product build**: No special behaviour. The build processes one product identically to each product in a multi-product run — one PDF is produced with its own cover page, TOC, and full section structure. No product-level heading suppression applies (contrast with the single-size suppression in FR-004, which is specific to sizes).
 
 ## Requirements *(mandatory)*
 
@@ -207,6 +206,17 @@ archive file is produced containing all generated PDFs.
   the visual styling (fonts, colours, layout) of all generated PDFs. All product
   PDFs MUST use the same theme file. If `theme.yml` is absent, the build MUST
   fail immediately before processing any product.
+- **FR-022**: If `infra/products.json` is absent or cannot be parsed as valid JSON,
+  the build MUST fail immediately with a clear error before processing any product.
+  No archive is produced. This is treated as a fatal build-level error, equivalent
+  to a missing `theme.yml`.
+- **FR-023**: If a shortname listed in `infra/products.json` has no corresponding
+  directory under `infra/`, the build MUST fail that product with a clear error
+  and continue processing remaining products (consistent with FR-008a).
+- **FR-024**: A server definition MUST have at least one disk partition. If the
+  `disk` list is absent or empty, the build MUST fail that product with a clear
+  validation error and continue processing remaining products (consistent with
+  FR-008a).
 - **FR-015a**: If a product-specific preamble or suffix file path is listed in a
   product's `meta.json` but the file does not exist on disk, the build MUST fail
   that product with a clear error and continue processing remaining products
@@ -225,8 +235,10 @@ archive file is produced containing all generated PDFs.
   directory names or filesystem sort order.
 - **FR-021**: A `README.md` at the repository root MUST provide a `docker run`
   command for local builds that mounts the repository working directory and
-  invokes `build.py` inside a container with all required toolchain dependencies
-  (asciidoctor-pdf, asciidoctor-diagram, mermaid-cli) pre-installed.
+  invokes `build.py` inside a container based on `asciidoctor/docker-asciidoctor`
+  with mermaid-cli (`@mermaid-js/mermaid-cli`) added. All required toolchain
+  dependencies (asciidoctor-pdf, asciidoctor-diagram, mermaid-cli) MUST be
+  available in the container without requiring network access at build time.
 
 ### Key Entities
 
@@ -279,8 +291,8 @@ archive file is produced containing all generated PDFs.
 
 ### Measurable Outcomes
 
-- **SC-001**: A complete build for 5 products with 3 sizes each completes without
-  manual intervention.
+- **SC-001**: A complete build for 5 products with 3 sizes each completes within
+  5 minutes without manual intervention.
 - **SC-002**: The generated PDF structure matches the mandated section order
   (FR-009) for every product, verifiable by document inspection.
 - **SC-003**: Single-size products produce PDFs with no size-tier headings,
@@ -322,11 +334,18 @@ archive file is produced containing all generated PDFs.
 - Q: What fields does a disk partition have? → A: Three fields — size, performance (free-text, e.g. "NVMe SSD", "7200 RPM HDD"), and comment (optional). *(Extends prior answer of size + comment.)*
 - Q: Are `network` and `software` server fields required or optional? → A: Both optional — omitting the field or providing an empty list renders an empty cell in the AsciiDoc table.
 - Q: Which is authoritative for display names — registry files or `meta.json`? → A: Registry files are authoritative. Display names are stored only in the registry (products.json, sizes.json, flavours.json). `meta.json` files drop the display name and contain only their level-specific metadata.
-- Q: What language/runtime should the build scripts use? → A: Python 3 (stdlib-only) — no external dependencies beyond the AsciiDoc/Mermaid toolchain.
+- Q: What language/runtime should the build scripts use? → A: Python 3.11+ (stdlib-only) — no external dependencies beyond the AsciiDoc/Mermaid toolchain. Python 3.11 is the minimum required version.
 - Q: What should the build do when a product has no sizes, a size has no flavours, or a flavour has no servers? → A: Fail hard for that product with a clear validation error message; continue processing all remaining products (consistent with FR-008a).
 - Q: How should Mermaid diagrams be rendered into PDFs? → A: asciidoctor-diagram plugin + local mermaid-cli (`mmdc`) — offline, no external network dependency.
 - Q: What should the build do when an explicitly referenced file is missing (product preamble/suffix, `theme.yml`)? → A: Missing product-specific preamble or suffix fails that product (errors collected per FR-008a); missing `theme.yml` fails the entire build immediately.
 - Q: Should the build be a single entry-point script or separate per-stage scripts? → A: Single `build.py` entry point running all three stages sequentially via discrete internal functions. A `README.md` MUST include a `docker run` command for local builds.
+- Q: What happens if `infra/products.json` is missing or malformed? → A: Fail the entire build immediately with a clear error — same behaviour as a missing `theme.yml`. No archive is produced (FR-022).
+- Q: What happens if a product listed in `products.json` has no corresponding folder under `infra/`? → A: Fail that product with a clear error, continue processing remaining products — consistent with FR-008a (FR-023).
+- Q: How does the system handle a server with no disk partitions? → A: Validation error — fail that product with a clear error and continue processing remaining products (FR-024).
+- Q: Is there a wall-clock time target for SC-001 (5 products × 3 sizes)? → A: 5 minutes — ceiling for a file-processing pipeline; used as CI timeout signal.
+- Q: Does a single-product build suppress the product-level heading (analogous to FR-004 size suppression)? → A: No suppression — each product PDF is its own document with a cover page; single-product runs use identical logic to multi-product runs.
+- Q: Which Docker base image should the README's `docker run` command use (FR-021)? → A: `asciidoctor/docker-asciidoctor` — official image with asciidoctor-pdf and asciidoctor-diagram pre-installed; mermaid-cli added via npm.
+- Q: What is the minimum Python version required for the build scripts? → A: Python 3.11 — ensures stable zipfile, pathlib, and tomllib availability.
 
 ## Assumptions
 
@@ -369,9 +388,10 @@ archive file is produced containing all generated PDFs.
   from the document structure. No manual authoring is required for either.
 - A "build" is triggered via the CI/CD pipeline or a local script; interactive
   GUI builds are out of scope.
-- Build scripts are implemented in Python 3 using the standard library only
+- Build scripts are implemented in Python 3.11+ using the standard library only
   (json, pathlib, subprocess, zipfile). No third-party Python packages are
-  required beyond the AsciiDoc/Mermaid toolchain binaries.
+  required beyond the AsciiDoc/Mermaid toolchain binaries. Python 3.11 is the
+  minimum required version.
 - A `README.md` at the repository root MUST document how to run the build
   locally, including a `docker run` command that mounts the repository and
   executes `build.py` inside a container that has all required toolchain
