@@ -1,0 +1,31 @@
+name: Build Infrastructure Sizing Documents
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t infra-sizing-builder .
+
+      - name: Run build
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/repo" \
+            -w /repo \
+            infra-sizing-builder \
+            python3 build.py
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: documents
+          path: |
+            output/*.pdf
+            output/documents.zip

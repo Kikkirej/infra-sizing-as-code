@@ -1,0 +1,15 @@
+[
+  {
+    "system": "DB Server",
+    "count": 1,
+    "cpu": "8 vCPU",
+    "cpu_clocking": "2.5 GHz",
+    "memory": "64 GB",
+    "disk": [
+      { "size": "1 TB", "performance": "NVMe SSD", "comment": "Data" }
+    ],
+    "network": ["1× 25GbE"],
+    "software": ["PostgreSQL 15"],
+    "comment": "Primary database"
+  }
+]
