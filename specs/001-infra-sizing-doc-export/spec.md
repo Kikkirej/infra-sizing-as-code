@@ -28,7 +28,9 @@ result is a readable PDF containing the correct hardware data.
 
 1. **Given** a product definition with one size and one flavour containing at least one server,
    **When** the build is triggered,
-   **Then** a PDF is produced that lists the server's CPU, memory, disk partitions, and comment.
+   **Then** a PDF is produced containing an AsciiDoc table with the server's
+   system, count, CPU, CPU clocking, memory, disk partitions, network, software,
+   and comment columns.
 
 2. **Given** a product with exactly one size defined,
    **When** the PDF is generated,
@@ -126,14 +128,29 @@ archive file is produced containing all generated PDFs.
   tier information MUST NOT appear in the generated document.
 - **FR-005**: Each size MUST support an optional prefix text and an optional suffix
   text that wrap its infrastructure content in the PDF.
-- **FR-006**: Server definitions MUST include: **name** (free-text display label
-  shown in the PDF), **count** (positive integer, number of instances; defaults
-  to 1 if omitted), **CPU** (free-text string, e.g. "4 vCPU"), **memory**
-  (free-text string, e.g. "32 GB"), **disk** (a list of partitions), and an
-  optional **comment** field (free-text).
+- **FR-006**: Server definitions MUST include the following fields, rendered as
+  columns in an AsciiDoc table in the order listed:
+  **system** (free-text, describes the server's purpose; first column),
+  **count** (positive integer, number of instances; defaults to 1),
+  **cpu** (free-text, e.g. "4 vCPU"),
+  **cpu_clocking** (free-text clock speed, e.g. "3.2 GHz"; placed after CPU),
+  **memory** (free-text, e.g. "32 GB"),
+  **disk** (list of partitions, each with size, performance, and optional comment),
+  **network** (optional free-text list, e.g. ["2× 10GbE", "1× 1GbE"]),
+  **software** (optional free-text list, e.g. ["Oracle DB 19c", "NGINX"]),
+  **comment** (optional free-text).
+- **FR-006a**: The `network` and `software` fields are optional lists of free-text
+  strings. When present and non-empty, items MUST be displayed as a bulleted or
+  newline-separated list within the table cell. When absent or empty, the cell
+  MUST render blank.
 - **FR-007**: Disk MUST be represented as a list of partitions; each partition is
-  listed individually in the document. A partition MUST contain exactly two fields:
-  **size** (the storage capacity) and **comment** (optional free-text description).
+  listed individually within the Disk cell of the server table. A partition MUST
+  contain three fields: **size** (storage capacity, e.g. "500 GB"),
+  **performance** (free-text storage tier, e.g. "NVMe SSD", "7200 RPM HDD"),
+  and **comment** (optional free-text description).
+- **FR-007a**: Within a flavour, all servers MUST be rendered as a single AsciiDoc
+  table. Each server occupies one row. Column order MUST follow FR-006: System,
+  Count, CPU, CPU Clocking, Memory, Disk, Network, Software, Comment.
 - **FR-008**: The build MUST execute in three ordered steps:
   (1) generate AsciiDoc source, (2) build PDFs from AsciiDoc, (3) archive PDFs.
 - **FR-008a**: If one or more products fail during step (1) or (2), the build MUST
@@ -155,11 +172,11 @@ archive file is produced containing all generated PDFs.
   `infra/{p}/{s}/flavours.json`; `infra/{p}/{s}/meta.json`;
   `infra/{p}/{s}/{f}/meta.json`; `infra/{p}/{s}/{f}/servers.json`; where `{p}`,
   `{s}`, `{f}` are shortnames (no numeric prefix on any folder).
-- **FR-013**: Each `meta.json` at the product level MUST contain at minimum the
-  product display name and the relative paths to the product-specific preamble
-  and suffix files (which reside within the product's folder under `infra/`).
-  Each `meta.json` at the size level MUST contain at minimum the size display
-  name, prefix text, and suffix text.
+- **FR-013**: Display names are stored exclusively in registry files (FR-016) and
+  MUST NOT be duplicated in `meta.json`. Each `meta.json` at the product level
+  MUST contain the relative paths to the product-specific preamble and suffix
+  files. Each `meta.json` at the size level MUST contain the prefix text and
+  suffix text.
 - **FR-013a**: The common preamble and common suffix MUST be stored as AsciiDoc
   files directly under `infra/` (`infra/preamble.adoc`, `infra/suffix.adoc`).
   Product-specific preamble and suffix files MUST also be AsciiDoc (`.adoc`).
@@ -168,9 +185,9 @@ archive file is produced containing all generated PDFs.
   fixed paths and product-specific files via paths in the product's `meta.json`.
 - **FR-014**: Each flavour MUST be a directory named `{shortname}/` within the
   size directory (no numeric prefix). The flavour directory MUST contain a
-  `meta.json` (display name and optional image entry) and a `servers.json`
-  (server definitions). Display order is controlled by `flavours.json`, not by
-  directory naming.
+  `meta.json` (optional image entry only; display name is in the parent
+  `flavours.json`) and a `servers.json` (server definitions). Display order is
+  controlled by `flavours.json`, not by directory naming.
 - **FR-017**: Each flavour directory MAY contain an optional `preamble.adoc` and
   an optional `suffix.adoc` (AsciiDoc). When present, these are included in the
   PDF before and after the flavour's server table respectively.
@@ -198,25 +215,29 @@ archive file is produced containing all generated PDFs.
 ### Key Entities
 
 - **Product**: Top-level grouping that maps to one output PDF. Has a **shortname**
-  (folder name under `infra/`) and a **display name** (used in the PDF, stored in
-  `infra/{shortname}/meta.json`). Also listed in `infra/products.json`.
-  The product folder contains a `meta.json` and one sub-directory per size.
+  (folder name under `infra/`) and a **display name** (stored exclusively in
+  `infra/products.json`). The product folder contains a `meta.json` (holding
+  preamble/suffix file paths only) and one sub-directory per size.
 - **Size**: A named tier within a product (e.g., "50 users", "500 users"). Has a
-  **shortname** (folder name) and a **display name** (stored in its `meta.json`
-  alongside prefix text and suffix text). Contains one or more numbered flavour files.
+  **shortname** (folder name) and a **display name** (stored exclusively in the
+  parent product's `sizes.json`). Its `meta.json` contains only the prefix text
+  and suffix text for that size. Contains one or more flavour sub-directories.
 - **Flavour**: A named server-role grouping within a size; stored as a directory
   `{shortname}/` (no numeric prefix). Has a **shortname** (directory name) and a
-  **display name** (in `meta.json`). Display order is controlled by the parent
-  size's `flavours.json`. Contains `meta.json`, optional `preamble.adoc`, optional
+  **display name** (stored exclusively in the parent size's `flavours.json`).
+  Display order is controlled by the parent size's `flavours.json`. Contains
+  `meta.json` (optional image entry only), optional `preamble.adoc`, optional
   `suffix.adoc`, and `servers.json`. May include an optional image entry (type
   `file` or `mermaid`) in `meta.json`.
-- **Server**: A concrete hardware specification with six fields: **name** (free-text
-  display label shown in the PDF), **count** (positive integer, number of instances;
-  defaults to 1), **CPU** (free-text, e.g. "4 vCPU"), **memory** (free-text,
-  e.g. "32 GB"), **disk** (list of partitions, each with size and optional
-  comment), and an optional **comment**.
-- **Partition**: A single disk partition entry within a server definition. Has two
-  fields: **size** (storage capacity, e.g. "100 GB") and **comment** (optional
+- **Server**: A concrete hardware specification rendered as a row in an AsciiDoc
+  table. Fields in column order: **system** (purpose description), **count**
+  (positive integer, defaults to 1), **cpu** (free-text), **cpu_clocking**
+  (free-text clock speed), **memory** (free-text), **disk** (list of partitions),
+  **network** (free-text list of interfaces), **software** (free-text list of
+  components), **comment** (optional free-text).
+- **Partition**: A single disk partition entry within a server definition. Has three
+  fields: **size** (storage capacity, e.g. "500 GB"), **performance** (free-text
+  storage tier, e.g. "NVMe SSD", "7200 RPM HDD"), and **comment** (optional
   free-text label or description).
 - **Common Preamble / Common Suffix**: Shared document sections applied to every
   product PDF unchanged; stored as `infra/preamble.adoc` and `infra/suffix.adoc`.
@@ -248,8 +269,9 @@ archive file is produced containing all generated PDFs.
   (FR-009) for every product, verifiable by document inspection.
 - **SC-003**: Single-size products produce PDFs with no size-tier headings,
   verifiable by reviewing the rendered output.
-- **SC-004**: All server hardware data (CPU, memory, partitions, comment) present
-  in a definition appears correctly in the corresponding PDF section.
+- **SC-004**: All server data (system, count, CPU, CPU clocking, memory, disk
+  partitions, network entries, software entries, comment) present in a definition
+  appears correctly as columns in the corresponding AsciiDoc table in the PDF.
 - **SC-005**: A single ZIP archive (`.zip`) containing all generated product PDFs
   is produced at the end of every build (including partial-failure builds where
   at least one PDF was successfully generated).
@@ -267,7 +289,7 @@ archive file is produced containing all generated PDFs.
 - Q: What does the "deck" section of the PDF contain? → A: A generated cover page containing the document title, product name, and build date/version.
 - Q: How should the build behave when one product fails? → A: Continue processing all products, collect all errors, report them together at the end, and exit with a failure code.
 - Q: What format should the build archive use? → A: ZIP (`.zip`) — a single archive containing all generated product PDFs.
-- Q: Do entities have both a short name and a display name? → A: Yes — every Product, Size, and Flavour has a shortname (used for file/folder names and the `NNN-` prefix) and a display name (used in the PDF). Display names are defined in each level's `meta.json`; for flavours the display name is a field inside the `NNN-flavourshortname.json` file itself.
+- Q: Do entities have both a short name and a display name? → A: Yes — every Product, Size, and Flavour has a shortname (used for file/folder names) and a display name (used in the PDF). *(Corrected: display names are stored exclusively in the registry files — `products.json`, `sizes.json`, `flavours.json` — not in `meta.json`. See final clarification below.)*
 - Q: How are all products registered / discovered by the build? → A: A top-level `infra/products.json` file lists all products with their shortname and display name. The build uses this as its authoritative product registry.
 - Q: What fields does a disk partition contain? → A: Size and comment. No mount point or filesystem type.
 - Q: What format are CPU and memory server fields? → A: Free-text strings for both (e.g., CPU: "4 vCPU", Memory: "32 GB"). No enforced structure.
@@ -280,6 +302,10 @@ archive file is produced containing all generated PDFs.
 - Q: How is ordering controlled for sizes and flavours? → A: Registry files control ordering: `sizes.json` inside each product folder lists sizes in display order; `flavours.json` inside each size folder lists flavours in display order. The `NNN-` numeric prefix is dropped from flavour folder names — folders are named with the shortname only.
 - Q: Is there a registry file pattern at every hierarchy level? → A: Yes — `products.json` (infra root), `sizes.json` (product folder), `flavours.json` (size folder). Each registry lists entries in the desired display order with their shortname and display name.
 - Q: For a flavour image of type `mermaid`, is the diagram inline or a file reference? → A: File reference — `value` is a relative path to a `.mmd` file within the flavour folder.
+- Q: What is the complete server field set and table column order? → A: System (purpose description, first column; replaces "name"), Count, CPU, CPU Clocking (clock speed, after CPU), Memory, Disk (list of partitions), Network (free-text list), Software (free-text list), Comment (optional). Servers are rendered as an AsciiDoc table in the generated document.
+- Q: What fields does a disk partition have? → A: Three fields — size, performance (free-text, e.g. "NVMe SSD", "7200 RPM HDD"), and comment (optional). *(Extends prior answer of size + comment.)*
+- Q: Are `network` and `software` server fields required or optional? → A: Both optional — omitting the field or providing an empty list renders an empty cell in the AsciiDoc table.
+- Q: Which is authoritative for display names — registry files or `meta.json`? → A: Registry files are authoritative. Display names are stored only in the registry (products.json, sizes.json, flavours.json). `meta.json` files drop the display name and contain only their level-specific metadata.
 
 ## Assumptions
 
@@ -290,15 +316,15 @@ archive file is produced containing all generated PDFs.
   ├── preamble.adoc                   ← common preamble (all products)
   ├── suffix.adoc                     ← common suffix (all products)
   └── {product-shortname}/
-      ├── meta.json                   ← product display name + preamble/suffix paths
+      ├── meta.json                   ← preamble/suffix file paths (no display name)
       ├── sizes.json                  ← size registry (ordered shortname + display name)
       ├── preamble.adoc               ← product-specific preamble
       ├── suffix.adoc                 ← product-specific suffix
       └── {size-shortname}/
-          ├── meta.json               ← size display name + prefix/suffix text
+          ├── meta.json               ← prefix/suffix text only (no display name)
           ├── flavours.json           ← flavour registry (ordered shortname + display name)
           └── {flavour-shortname}/    ← no NNN- prefix; order from flavours.json
-              ├── meta.json           ← flavour display name + optional image entry
+              ├── meta.json           ← optional image entry only (no display name)
               ├── preamble.adoc       ← optional flavour preamble
               ├── suffix.adoc         ← optional flavour suffix
               └── servers.json        ← server definitions for this flavour
