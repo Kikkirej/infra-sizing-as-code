@@ -98,6 +98,7 @@ README.md
 src/
 ├── __init__.py
 ├── loader.py            # JSON loading and validation (FR-016, FR-022, FR-023, FR-024)
+├── build_runner.py      # Build orchestrator: wires three stages, accumulates errors, returns exit code
 ├── renderer.py          # AsciiDoc string generation (tables, include blocks, cover attrs)
 └── stages/
     ├── __init__.py

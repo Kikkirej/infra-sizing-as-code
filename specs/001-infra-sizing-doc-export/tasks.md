@@ -90,7 +90,7 @@ with both disk partitions is present.
 ### Unit Tests
 
 - [ ] T022 [P] [US1] Write `tests/unit/test_loader.py` — test: valid servers.json loads correctly; empty `disk` raises validation error (FR-024); missing `sizes.json` triggers product error; `count` defaults to 1; absent `network`/`software` default to `[]`
-- [ ] T023 [P] [US1] Write `tests/unit/test_renderer.py` — test: `render_server_table()` produces correct 9-column table; single partition renders one bullet; multi-partition renders multiple bullets; empty network → blank `a|` cell; `render_size_section()` suppresses heading when `is_single_size=True` (FR-004)
+- [ ] T023 [P] [US1] Write `tests/unit/test_renderer.py` — test: `render_server_table()` produces correct 9-column table; single partition renders one bullet; multi-partition renders multiple bullets; empty network → blank `a|` cell; `render_size_section()` suppresses heading when `is_single_size=True` (FR-004); `render_flavour_section()` emits no `include::` line when `has_preamble=False` and no `include::` line when `has_suffix=False` (FR-017)
 
 ### Wire-Up
 
@@ -110,7 +110,7 @@ verify two PDFs are produced. Then deliberately break one product (remove its
 `sizes.json`); verify one PDF is produced, one error is reported, exit code is 1.
 
 - [ ] T025 [P] [US2] Add a second product (`product-b`) to `tests/fixtures/minimal-infra/products.json` and create its full directory structure in `tests/fixtures/minimal-infra/product-b/` — distinct sizes and flavours from `product-a`
-- [ ] T026 [US2] Validate `render_product_document()` embeds the correct common preamble/suffix includes and that product-specific preamble/suffix includes differ per product — assert generated `.adoc` content in unit test (FR-010, FR-011)
+- [ ] T026 [US2] Validate `render_product_document()` embeds the correct common preamble/suffix includes and that product-specific preamble/suffix includes differ per product — assert generated `.adoc` content in `tests/unit/test_renderer.py` (FR-010, FR-011)
 - [ ] T027 [US2] Validate mandated section order in generated `.adoc` for multi-product build: `header → include::infra/preamble.adoc[] → include::infra/{p}/preamble.adoc[] → sizes → include::infra/{p}/suffix.adoc[] → include::infra/suffix.adoc[]` — assert in `tests/unit/test_renderer.py` (FR-009)
 - [ ] T028 [US2] Test per-product error isolation in `tests/unit/test_loader.py` — simulate `load_product()` for two products where one has no sizes; assert errors list has one entry, the valid product still returns a `Product` object (FR-008a)
 - [ ] T029 [US2] Write integration test `tests/integration/test_build.py` (`@pytest.mark.integration`) — run `build.py` against two-product fixture; assert exactly 2 `.pdf` files in `output/`; assert exit code 0
@@ -147,7 +147,7 @@ verify ZIP contains only the successful PDF(s) and exit code is 1.
 - [ ] T037 [P] Create `.gitlab-ci.yml` at repo root — `build-docs` job using the Docker image; `script: python3 build.py`; `artifacts: paths: [output/*.pdf, output/documents.zip]` with `when: always` (constitution IV; see `contracts/build-contract.md`)
 - [ ] T038 [P] Create `.github/workflows/build.yml` — equivalent GitHub Actions pipeline: checkout, docker build, docker run, upload-artifact with `if: always()` (constitution IV; see `contracts/build-contract.md`)
 - [ ] T039 [P] Create sample `infra/` structure at repo root — `products.json`, `preamble.adoc`, `suffix.adoc`, and one complete product directory — gives users a working starting point
-- [ ] T040 Run `quickstart.md` validation — execute `docker build` + `docker run` against the sample `infra/` from T039; verify PDF and ZIP produced; fix any discrepancies
+- [ ] T040 Run `quickstart.md` validation — (a) execute `docker build` + `docker run` against the 1-product sample `infra/` from T039; verify PDF and ZIP produced; (b) run against a 5-product × 3-size fixture (create inline or extend T039 sample) and confirm the build completes within 5 minutes (SC-001); fix any discrepancies
 - [ ] T041 [P] Review and finalise `.gitignore` — confirm `output/`, `__pycache__/`, `.pytest_cache/`, `*.egg-info/` all excluded
 - [ ] T042 Final code review pass — verify: all `src/` modules have correct docstring-free, well-named functions; `build.py` delegates to `src/build_runner.py`; no dead code; stdlib-only imports throughout
 
