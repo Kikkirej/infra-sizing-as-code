@@ -103,12 +103,14 @@ archive file is produced containing all generated PDFs.
 
 ### Edge Cases
 
-- What happens when a product has no sizes defined?
-- What happens when a size has no flavours defined?
-- What happens when a flavour has no servers defined?
+- **Product with no sizes / size with no flavours / flavour with no servers**: Fail
+  hard for that product with a clear validation error; continue processing remaining
+  products (FR-008a).
 - How does the system handle a server with no disk partitions?
-- What happens if a product-specific preamble or suffix file is missing?
-- What happens if `theme.yml` is missing from the repository root?
+- **Missing product-specific preamble or suffix file**: Fail hard for that product
+  with a clear error; continue remaining products (FR-008a).
+- **Missing `theme.yml`**: Fail the entire build immediately with a clear error
+  before processing any product.
 - What happens if `infra/products.json` is missing or malformed?
 - What happens if a product listed in `products.json` has no corresponding folder under `infra/`?
 - What happens if a shortname in `products.json` does not match any folder name?
@@ -153,10 +155,14 @@ archive file is produced containing all generated PDFs.
   Count, CPU, CPU Clocking, Memory, Disk, Network, Software, Comment.
 - **FR-008**: The build MUST execute in three ordered steps:
   (1) generate AsciiDoc source, (2) build PDFs from AsciiDoc, (3) archive PDFs.
-- **FR-008a**: If one or more products fail during step (1) or (2), the build MUST
-  continue processing all remaining products, collect all errors, report them
-  together at the end, and exit with a non-zero failure code. Successfully
-  generated PDFs from that run MUST still be available.
+  The entry point MUST be a single `build.py` script that runs all three stages
+  sequentially via discrete internal stage functions.
+- **FR-008a**: If one or more products fail during step (1) or (2) — including
+  validation failures such as a product having no sizes, a size having no
+  flavours, or a flavour having no servers — the build MUST continue processing
+  all remaining products, collect all errors, report them together at the end,
+  and exit with a non-zero failure code. Successfully generated PDFs from that
+  run MUST still be available.
 - **FR-009**: Each PDF MUST be composed of the following sections in order:
   (1) generated cover page (document title, product name, build date/version) and
   auto-generated TOC, (2) common preamble, (3) product-specific preamble,
@@ -194,11 +200,17 @@ archive file is produced containing all generated PDFs.
 - **FR-018**: A flavour's `meta.json` MAY include an optional image entry with a
   `type` and a `value`. `type: file` — `value` is a relative path to an image
   file (rendered inline in the PDF). `type: mermaid` — `value` is a relative path
-  to a `.mmd` file within the flavour folder (rendered as a Mermaid diagram in the
-  PDF). When the image entry is absent, no image is included for that flavour.
+  to a `.mmd` file within the flavour folder; rendered via the `asciidoctor-diagram`
+  plugin and local `mermaid-cli` (`mmdc`) without external network access. When
+  the image entry is absent, no image is included for that flavour.
 - **FR-015**: A `theme.yml` file at the repository root MUST be used to control
   the visual styling (fonts, colours, layout) of all generated PDFs. All product
-  PDFs MUST use the same theme file.
+  PDFs MUST use the same theme file. If `theme.yml` is absent, the build MUST
+  fail immediately before processing any product.
+- **FR-015a**: If a product-specific preamble or suffix file path is listed in a
+  product's `meta.json` but the file does not exist on disk, the build MUST fail
+  that product with a clear error and continue processing remaining products
+  (consistent with FR-008a).
 - **FR-016**: Registry files at each hierarchy level MUST control both discovery
   and display order. `infra/products.json` lists all products; each product folder
   contains `sizes.json` listing that product's sizes; each size folder contains
@@ -211,6 +223,10 @@ archive file is produced containing all generated PDFs.
 - **FR-020**: Each size folder MUST contain a `flavours.json` listing the size's
   flavours in display order. The build MUST NOT infer flavour ordering from
   directory names or filesystem sort order.
+- **FR-021**: A `README.md` at the repository root MUST provide a `docker run`
+  command for local builds that mounts the repository working directory and
+  invokes `build.py` inside a container with all required toolchain dependencies
+  (asciidoctor-pdf, asciidoctor-diagram, mermaid-cli) pre-installed.
 
 ### Key Entities
 
@@ -306,6 +322,11 @@ archive file is produced containing all generated PDFs.
 - Q: What fields does a disk partition have? → A: Three fields — size, performance (free-text, e.g. "NVMe SSD", "7200 RPM HDD"), and comment (optional). *(Extends prior answer of size + comment.)*
 - Q: Are `network` and `software` server fields required or optional? → A: Both optional — omitting the field or providing an empty list renders an empty cell in the AsciiDoc table.
 - Q: Which is authoritative for display names — registry files or `meta.json`? → A: Registry files are authoritative. Display names are stored only in the registry (products.json, sizes.json, flavours.json). `meta.json` files drop the display name and contain only their level-specific metadata.
+- Q: What language/runtime should the build scripts use? → A: Python 3 (stdlib-only) — no external dependencies beyond the AsciiDoc/Mermaid toolchain.
+- Q: What should the build do when a product has no sizes, a size has no flavours, or a flavour has no servers? → A: Fail hard for that product with a clear validation error message; continue processing all remaining products (consistent with FR-008a).
+- Q: How should Mermaid diagrams be rendered into PDFs? → A: asciidoctor-diagram plugin + local mermaid-cli (`mmdc`) — offline, no external network dependency.
+- Q: What should the build do when an explicitly referenced file is missing (product preamble/suffix, `theme.yml`)? → A: Missing product-specific preamble or suffix fails that product (errors collected per FR-008a); missing `theme.yml` fails the entire build immediately.
+- Q: Should the build be a single entry-point script or separate per-stage scripts? → A: Single `build.py` entry point running all three stages sequentially via discrete internal functions. A `README.md` MUST include a `docker run` command for local builds.
 
 ## Assumptions
 
@@ -333,8 +354,10 @@ archive file is produced containing all generated PDFs.
   and a display name (PDF presentation). No GUI authoring tool is required.
 - A `theme.yml` file at the repository root defines the visual styling applied
   to all generated PDFs. Its presence is required for a successful build.
-- The AsciiDoc-to-PDF toolchain is available in the build environment; its
-  installation is out of scope for this feature.
+- The AsciiDoc-to-PDF toolchain (`asciidoctor-pdf`) with the `asciidoctor-diagram`
+  plugin and local `mermaid-cli` (`mmdc`) is available in the build environment;
+  toolchain installation is out of scope for this feature. Mermaid diagrams are
+  rendered offline via `mmdc` — no external network access is required.
 - All preamble and suffix files are AsciiDoc (`.adoc`) and included verbatim
   into the generated AsciiDoc document before PDF conversion. Common files are
   at `infra/preamble.adoc` and `infra/suffix.adoc`. Product-specific files are
@@ -346,3 +369,10 @@ archive file is produced containing all generated PDFs.
   from the document structure. No manual authoring is required for either.
 - A "build" is triggered via the CI/CD pipeline or a local script; interactive
   GUI builds are out of scope.
+- Build scripts are implemented in Python 3 using the standard library only
+  (json, pathlib, subprocess, zipfile). No third-party Python packages are
+  required beyond the AsciiDoc/Mermaid toolchain binaries.
+- A `README.md` at the repository root MUST document how to run the build
+  locally, including a `docker run` command that mounts the repository and
+  executes `build.py` inside a container that has all required toolchain
+  dependencies pre-installed (asciidoctor-pdf, asciidoctor-diagram, mermaid-cli).
