@@ -65,39 +65,32 @@ specs/[###-feature]/
 -->
 
 ```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
+# Standard layout (per constitution: File-First Architecture)
 src/
 ├── models/
 ├── services/
 ├── cli/
 └── lib/
 
-tests/
-├── contract/
-├── integration/
-└── unit/
+infra/
+├── [environment]/
+└── [resource-type]/
 
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
+docs/
+└── [feature-name]/
 
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
+# [REMOVE IF UNUSED] CI/CD pipelines (both required per constitution)
+.gitlab-ci.yml
+.github/
+└── workflows/
+    └── [pipeline].yml
 
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+# [REMOVE IF UNUSED] Option: additional subdirectories within src/
+src/
+├── models/
+├── services/
+├── cli/
+└── lib/
 ```
 
 **Structure Decision**: [Document the selected structure and reference the real

@@ -21,10 +21,11 @@ description: "Task list template for feature implementation"
 
 ## Path Conventions
 
-- **Single project**: `src/`, `tests/` at repository root
-- **Web app**: `backend/src/`, `frontend/src/`
-- **Mobile**: `api/src/`, `ios/src/` or `android/src/`
-- Paths shown below assume single project - adjust based on plan.md structure
+- **App logic**: `src/` at repository root (models, services, cli, lib)
+- **Infrastructure definitions**: `infra/` at repository root (declarative, reproducible)
+- **Documentation**: `docs/` at repository root (feature docs, file-structure references)
+- **CI/CD**: `.gitlab-ci.yml` (GitLab) and `.github/workflows/` (GitHub Actions) — both REQUIRED
+- Paths shown below assume the canonical layout — adjust based on plan.md structure
 
 <!--
   ============================================================================
