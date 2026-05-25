@@ -2,12 +2,12 @@
   {
     "system": "App Server",
     "count": 2,
-    "cpu": "4 vCPU",
+    "cpu": { "type": "static", "value": 4, "unit": "vCPU" },
     "cpu_clocking": "3.0 GHz",
-    "memory": "16 GB",
+    "memory": { "type": "static", "value": 16, "unit": "GB" },
     "disk": [
-      { "size": "100 GB", "performance": "SSD", "comment": "OS" },
-      { "size": "500 GB", "performance": "HDD" }
+      { "size": { "type": "static", "value": 100, "unit": "GB" }, "performance": "SSD", "comment": "OS" },
+      { "size": { "type": "static", "value": 500, "unit": "GB" }, "performance": "HDD" }
     ],
     "network": ["1× 10GbE"],
     "software": ["Java 17"],

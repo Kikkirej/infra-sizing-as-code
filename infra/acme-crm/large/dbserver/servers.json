@@ -1,0 +1,32 @@
+[
+  {
+    "system": "Primary Database",
+    "count": 1,
+    "cpu": { "type": "static", "value": 64, "unit": "vCPU" },
+    "cpu_clocking": "3.8 GHz",
+    "memory": { "type": "static", "value": 512, "unit": "GB" },
+    "disk": [
+      { "size": { "type": "static", "value": 100,  "unit": "GB" }, "performance": "NVMe SSD",     "comment": "OS"   },
+      { "size": { "type": "static", "value": 20,   "unit": "TB" }, "performance": "NVMe SSD",     "comment": "Data" },
+      { "size": { "type": "static", "value": 4,    "unit": "TB" }, "performance": "NVMe SSD",     "comment": "Logs" }
+    ],
+    "network": ["4× 25GbE"],
+    "software": ["PostgreSQL 16"],
+    "comment": ""
+  },
+  {
+    "system": "Replica Database",
+    "count": 3,
+    "cpu": { "type": "static", "value": 64, "unit": "vCPU" },
+    "cpu_clocking": "3.8 GHz",
+    "memory": { "type": "static", "value": 512, "unit": "GB" },
+    "disk": [
+      { "size": { "type": "static", "value": 100,  "unit": "GB" }, "performance": "NVMe SSD",     "comment": "OS"   },
+      { "size": { "type": "static", "value": 20,   "unit": "TB" }, "performance": "NVMe SSD",     "comment": "Data" },
+      { "size": { "type": "static", "value": 4,    "unit": "TB" }, "performance": "NVMe SSD",     "comment": "Logs" }
+    ],
+    "network": ["4× 25GbE"],
+    "software": ["PostgreSQL 16"],
+    "comment": "Hot standby"
+  }
+]

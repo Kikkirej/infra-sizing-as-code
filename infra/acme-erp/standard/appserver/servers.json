@@ -1,0 +1,16 @@
+[
+  {
+    "system": "Application Server",
+    "count": 2,
+    "cpu": { "type": "static", "value": 16, "unit": "vCPU" },
+    "cpu_clocking": "3.2 GHz",
+    "memory": { "type": "static", "value": 64, "unit": "GB" },
+    "disk": [
+      { "size": { "type": "static", "value": 100, "unit": "GB" }, "performance": "NVMe SSD", "comment": "OS" },
+      { "size": { "type": "static", "value": 500, "unit": "GB" }, "performance": "NVMe SSD", "comment": "App data" }
+    ],
+    "network": ["2× 10GbE"],
+    "software": ["OpenJDK 21", "NGINX 1.25"],
+    "comment": "Active/active pair"
+  }
+]

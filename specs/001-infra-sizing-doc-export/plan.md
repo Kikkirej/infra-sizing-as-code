@@ -1,67 +1,60 @@
 # Implementation Plan: Infrastructure Sizing Document Export
 
-**Branch**: `001-infra-sizing-doc-export` | **Date**: 2026-05-24 | **Spec**: `specs/001-infra-sizing-doc-export/spec.md`
-
-**Input**: Feature specification from `specs/001-infra-sizing-doc-export/spec.md`
+**Branch**: `001-infra-sizing-doc-export` | **Date**: 2026-05-25 | **Spec**: `specs/001-infra-sizing-doc-export/spec.md`
 
 ## Summary
 
-Build a three-stage Python 3.11 CLI pipeline (`build.py`) that reads declarative
-infrastructure definitions from a hierarchical `infra/` directory tree (JSON +
-AsciiDoc), generates one AsciiDoc document per product, converts each to PDF via
-`asciidoctor-pdf`, and archives all PDFs into a single ZIP. Both GitLab CI and
-GitHub Actions pipelines invoke the same `build.py` entry point inside a Docker
-container based on `asciidoctor/docker-asciidoctor` extended with Python 3.11
-and mermaid-cli.
+Three-stage Python pipeline (stdlib-only) that reads a hierarchical JSON-based
+infrastructure definition tree and produces per-product PDF documents plus a ZIP
+archive.
+
+Stage 1 — Generate AsciiDoc: walk `infra/products.json` → sizes → flavours →
+`servers.json`; render each product to `output/{shortname}.adoc`.
+Stage 2 — Build PDFs: invoke `asciidoctor-pdf` per `.adoc` via subprocess.
+Stage 3 — Archive: zip all produced PDFs to `output/documents.zip`.
+
+**Server table column layout** (as of 2026-05-25 revision):
+- Columns: **System** | **CPU** | **Memory** | **Disk** | **Comment**
+- Count is embedded in the System cell as `{system} [{count}]` when `count > 1`
+- Network and Software are folded into the Comment cell (bullet list + original
+  comment text); Network/Software columns have been removed
+- Disk cell uses an AsciiDoc `!===` nested table (one row per partition)
+- CPU + CPU Clocking are always merged: `{cpu.render()} ({cpu_clocking})`
+
+**TypedValue discriminated union**: `{ "type": "static", "value": 8, "unit": "vCPU" }`
+or `{ "type": "dynamic", "formula": "n × 4", "unit": "vCPU" }`. Used for
+`Server.cpu`, `Server.memory`, and `Partition.size`. `render()` formats integers
+without trailing `.0`.
 
 ## Technical Context
 
-**Language/Version**: Python 3.11+ (stdlib only — json, pathlib, subprocess, zipfile, sys, datetime)
+**Language/Version**: Python 3.11 (stdlib only — no third-party packages)
 
-**Primary Dependencies**: `asciidoctor-pdf` (subprocess), `asciidoctor-diagram`
-(asciidoctor-pdf extension flag `-r asciidoctor-diagram`), `mmdc` mermaid-cli
-(invoked indirectly by asciidoctor-diagram). No third-party Python packages.
+**Primary Dependencies**: asciidoctor-pdf (via Docker), asciidoctor-diagram, mermaid-cli
 
-**Storage**: Filesystem — hierarchical JSON + AsciiDoc under `infra/`; generated
-outputs under `output/` (gitignored); final archive `output/documents.zip`.
+**Storage**: File system — JSON data files + `.adoc` includes; `output/` directory for artifacts
 
-**Testing**: pytest — unit tests (no toolchain required), integration tests
-(require asciidoctor toolchain; CI-gated via `@pytest.mark.integration`).
+**Testing**: pytest (unit tests run stdlib-only; integration tests require Docker)
 
-**Target Platform**: Linux, Docker container (`asciidoctor/docker-asciidoctor`
-extended with Python 3.11 + `@mermaid-js/mermaid-cli`). Local builds via
-`docker run` (see FR-021 / README.md).
+**Target Platform**: Linux (Docker container: `asciidoctor/docker-asciidoctor` + Python 3.11 + mermaid-cli)
 
-**Project Type**: CLI batch build tool / document generator
+**Project Type**: CLI build tool / document generator
 
-**Performance Goals**: Full build for 5 products × 3 sizes completes within
-5 minutes (SC-001).
+**Performance Goals**: Build completes in < 5 minutes for 5 products × 3 sizes (SC-001)
 
-**Constraints**: Python stdlib only; fully offline at build time (no network
-access during `mmdc` or asciidoctor-pdf); single `build.py` entry point at
-repo root (FR-008); failure isolation per product (FR-008a).
+**Constraints**: stdlib-only Python; no pip dependencies at runtime; Docker for full build
 
-**Scale/Scope**: N products, each with M sizes, K flavours per size, J servers
-per flavour — all bounded by filesystem and 5-minute wall-clock constraint.
+**Scale/Scope**: Designed for 2–20 products, 1–5 sizes per product, 1–5 flavours per size
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-evaluated post-design below.*
+- **Git as Truth**: All infra definitions and generated `.adoc` committed; `output/` gitignored ✓
+- **File-First Architecture**: `infra/` directory tree is the source of truth ✓
+- **Infrastructure as Code**: All sizing defined in JSON; no GUI, no manual PDF editing ✓
+- **CI/CD Portability**: Docker build + run command; both GitLab CI and GitHub Actions pipelines provided ✓
+- **Documentation-Driven**: `docs/` contains file-structure guide; `README.md` has quickstart ✓
 
-| Principle | Status | Notes |
-|-----------|--------|-------|
-| I. Git as Single Source of Truth | ✅ PASS | All infra defs are versioned files; `output/` gitignored; no side-channel state |
-| II. File-First Architecture | ✅ PASS | `src/` for Python logic; `infra/` for definitions; `docs/` for documentation |
-| III. Infrastructure as Code | ✅ PASS | All infra defined declaratively in `infra/`; no manual provisioning |
-| IV. CI/CD Portability | ✅ PASS | GitLab CI + GitHub Actions both required; shared `build.py` entry point |
-| V. Documentation-Driven | ✅ PASS | `docs/infra-sizing-doc-export/` + `README.md` (FR-021) required before merge |
-
-**No violations. Complexity Tracking table not required.**
-
-**Post-design re-evaluation**: All principles remain satisfied after Phase 1 design.
-The `build.py` root entry point is a thin delegator; all logic lives in `src/`.
-`include::` paths in generated AsciiDoc use asciidoctor-pdf's `-B` base-directory
-flag so they are resolved relative to repo root, not the `output/` directory.
+All gates pass.
 
 ## Project Structure
 
@@ -70,109 +63,62 @@ flag so they are resolved relative to repo root, not the `output/` directory.
 ```text
 specs/001-infra-sizing-doc-export/
 ├── plan.md              # This file
-├── research.md          # Phase 0 output
-├── data-model.md        # Phase 1 output
-├── quickstart.md        # Phase 1 output
-├── contracts/
-│   ├── json-schemas.md  # Phase 1 output — JSON file format specs
-│   └── build-contract.md  # Phase 1 output — CLI and output contract
-└── tasks.md             # Phase 2 output (/speckit-tasks — NOT created by /speckit-plan)
+├── research.md          # Phase 0: tool choices, AsciiDoc structure, TypedValue design
+├── data-model.md        # Phase 1: entity schemas and Python dataclasses
+├── quickstart.md        # Phase 1: 2-product worked example
+├── contracts/           # Phase 1: JSON schemas, build contract
+└── tasks.md             # Phase 2: task breakdown (regenerated by /speckit-tasks)
 ```
 
 ### Source Code (repository root)
 
 ```text
-# Entry point (repo root — per FR-008)
-build.py               # Thin CLI entry point; delegates to src/
+build.py                          # Entry point: delegates to src.build_runner.run()
+theme.yml                         # asciidoctor-pdf theme (extends: default)
+Dockerfile                        # asciidoctor/docker-asciidoctor + Python 3.11 + mermaid-cli
+.gitlab-ci.yml                    # GitLab CI pipeline
+.github/workflows/build.yml       # GitHub Actions pipeline
 
-# Build environment (for FR-021 docker run)
-Dockerfile             # Extends asciidoctor/docker-asciidoctor; adds Python 3.11 + mermaid-cli
-
-# PDF theme (required — FR-015)
-theme.yml
-
-# Documentation (FR-021)
-README.md
-
-# Application logic (per constitution — File-First Architecture)
-src/
-├── __init__.py
-├── loader.py            # JSON loading and validation (FR-016, FR-022, FR-023, FR-024)
-├── build_runner.py      # Build orchestrator: wires three stages, accumulates errors, returns exit code
-├── renderer.py          # AsciiDoc string generation (tables, include blocks, cover attrs)
-└── stages/
-    ├── __init__.py
-    ├── generate.py      # Stage 1: JSON → .adoc per product
-    ├── build_pdf.py     # Stage 2: asciidoctor-pdf subprocess per product
-    └── archive.py       # Stage 3: zipfile archive of all successful PDFs
-
-# Tests
-tests/
-├── fixtures/
-│   └── minimal-infra/   # Minimal valid infra/ tree for unit + integration tests
-│       ├── products.json
-│       ├── preamble.adoc
-│       ├── suffix.adoc
-│       └── product-a/
-│           ├── meta.json
-│           ├── sizes.json
-│           ├── preamble.adoc
-│           ├── suffix.adoc
-│           └── size-s/
-│               ├── meta.json
-│               ├── flavours.json
-│               └── flavour-f/
-│                   ├── meta.json
-│                   └── servers.json
-├── unit/
-│   ├── test_loader.py
-│   └── test_renderer.py
-└── integration/
-    └── test_build.py    # Requires asciidoctor toolchain; @pytest.mark.integration
-
-# Infrastructure definitions (per constitution — IaC)
 infra/
-├── products.json
-├── preamble.adoc
-├── suffix.adoc
+├── products.json                 # Registry: [{shortname, display_name}]
+├── preamble.adoc                 # Global document preamble (include at top of every product doc)
+├── suffix.adoc                   # Global document suffix (include at bottom)
 └── {product-shortname}/
-    ├── meta.json
-    ├── sizes.json
-    ├── preamble.adoc
-    ├── suffix.adoc
-    └── {size-shortname}/
-        ├── meta.json
-        ├── flavours.json
-        └── {flavour-shortname}/
-            ├── meta.json
-            ├── preamble.adoc    # optional
-            ├── suffix.adoc      # optional
-            └── servers.json
+      ├── meta.json               # {preamble, suffix} file references
+      ├── preamble.adoc
+      ├── suffix.adoc
+      ├── sizes.json              # [{shortname, display_name}]
+      └── {size-shortname}/
+            ├── meta.json         # {prefix_text, suffix_text}
+            ├── flavours.json     # [{shortname, display_name}]
+            └── {flavour-shortname}/
+                  ├── meta.json   # {image: {type, value}} (optional)
+                  └── servers.json
 
-# Generated outputs (gitignored)
-output/
+src/
+├── loader.py                     # JSON → Python dataclasses (TypedValue parsing + validation)
+├── renderer.py                   # Dataclasses → AsciiDoc strings
+├── build_runner.py               # Orchestrates all three stages
+└── stages/
+      ├── generate.py             # Stage 1: render + write .adoc files
+      ├── build_pdf.py            # Stage 2: invoke asciidoctor-pdf per product
+      └── archive.py             # Stage 3: zip PDFs to documents.zip
+
+output/                           # Generated artifacts (gitignored)
 ├── {product-shortname}.adoc
 ├── {product-shortname}.pdf
 └── documents.zip
 
-# Documentation (per constitution — Documentation-Driven)
+tests/
+├── unit/
+│   ├── test_loader.py
+│   └── test_renderer.py
+├── integration/
+│   └── test_build.py
+└── fixtures/
+      └── minimal-infra/         # Minimal valid infra tree for unit + integration tests
+
 docs/
 └── infra-sizing-doc-export/
-    └── file-structure.md
-
-# CI/CD pipelines (both required — per constitution IV)
-.gitlab-ci.yml
-.github/
-└── workflows/
-    └── build.yml
+      └── file-structure.md
 ```
-
-**Structure Decision**: `build.py` at repo root is the thin entry point mandated
-by FR-008, importing and delegating to `src/`. All application logic is in `src/`
-per constitution principle II. The `infra/` tree is user-managed data; the `output/`
-directory is gitignored build artifact space. Both CI/CD platforms invoke
-`python build.py` inside the same Docker container.
-
-## Complexity Tracking
-
-*No violations to justify — all constitution gates pass.*

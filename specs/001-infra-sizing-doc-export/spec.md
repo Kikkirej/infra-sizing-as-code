@@ -129,29 +129,33 @@ archive file is produced containing all generated PDFs.
   tier information MUST NOT appear in the generated document.
 - **FR-005**: Each size MUST support an optional prefix text and an optional suffix
   text that wrap its infrastructure content in the PDF.
-- **FR-006**: Server definitions MUST include the following fields, rendered as
-  columns in an AsciiDoc table in the order listed:
-  **system** (free-text, describes the server's purpose; first column),
-  **count** (positive integer, number of instances; defaults to 1),
-  **cpu** (free-text, e.g. "4 vCPU"),
-  **cpu_clocking** (free-text clock speed, e.g. "3.2 GHz"; placed after CPU),
-  **memory** (free-text, e.g. "32 GB"),
-  **disk** (list of partitions, each with size, performance, and optional comment),
-  **network** (optional free-text list, e.g. ["2× 10GbE", "1× 1GbE"]),
-  **software** (optional free-text list, e.g. ["Oracle DB 19c", "NGINX"]),
-  **comment** (optional free-text).
+- **FR-006**: Server definitions MUST include the following fields. The rendered
+  AsciiDoc table MUST have exactly five columns in the order listed:
+  **System** (first column; displays `{system}` when `count == 1`, or
+  `{system} [{count}]` when `count > 1`),
+  **CPU** (merged column: `{cpu} ({cpu_clocking})`, e.g. `8 vCPU (3.2 GHz)`),
+  **Memory** (e.g. `32 GB`),
+  **Disk** (nested partition table — see FR-007),
+  **Comment** (combined cell containing `network` items, `software` items, and
+  the original `comment` text — see FR-006a).
+  Fields stored in `servers.json`: `system`, `count` (integer ≥ 1, default 1),
+  `cpu`, `cpu_clocking`, `memory`, `disk`, `network` (optional list), `software`
+  (optional list), `comment` (optional free-text).
 - **FR-006a**: The `network` and `software` fields are optional lists of free-text
-  strings. When present and non-empty, items MUST be displayed as a bulleted or
-  newline-separated list within the table cell. When absent or empty, the cell
-  MUST render blank.
+  strings. They MUST be rendered inside the **Comment** column cell (not as
+  separate columns). When present and non-empty, each item MUST appear as a
+  `* {item}` bullet. Software items are listed first, then network items. The
+  original `comment` text (if any) is appended after the bullets. When all three
+  (`network`, `software`, `comment`) are absent or empty, the Comment cell MUST
+  render blank.
 - **FR-007**: Disk MUST be represented as a list of partitions; each partition is
   listed individually within the Disk cell of the server table. A partition MUST
   contain three fields: **size** (storage capacity, e.g. "500 GB"),
   **performance** (free-text storage tier, e.g. "NVMe SSD", "7200 RPM HDD"),
   and **comment** (optional free-text description).
 - **FR-007a**: Within a flavour, all servers MUST be rendered as a single AsciiDoc
-  table. Each server occupies one row. Column order MUST follow FR-006: System,
-  Count, CPU, CPU Clocking, Memory, Disk, Network, Software, Comment.
+  table. Each server occupies one row. The five-column order MUST follow FR-006:
+  System (with optional `[count]` annotation) | CPU | Memory | Disk | Comment.
 - **FR-008**: The build MUST execute in three ordered steps:
   (1) generate AsciiDoc source, (2) build PDFs from AsciiDoc, (3) archive PDFs.
   The entry point MUST be a single `build.py` script that runs all three stages
@@ -297,9 +301,12 @@ archive file is produced containing all generated PDFs.
   (FR-009) for every product, verifiable by document inspection.
 - **SC-003**: Single-size products produce PDFs with no size-tier headings,
   verifiable by reviewing the rendered output.
-- **SC-004**: All server data (system, count, CPU, CPU clocking, memory, disk
-  partitions, network entries, software entries, comment) present in a definition
-  appears correctly as columns in the corresponding AsciiDoc table in the PDF.
+- **SC-004**: All server data present in a definition appears correctly in the
+  corresponding AsciiDoc table in the PDF: system name shown in the System column
+  (with `[count]` suffix when `count > 1`); merged CPU column shows
+  `{cpu} ({cpu_clocking})`; memory shown in Memory column; disk partitions in
+  the nested Disk table; network items, software items, and comment text all
+  rendered in the Comment column.
 - **SC-005**: A single ZIP archive (`.zip`) containing all generated product PDFs
   is produced at the end of every build (including partial-failure builds where
   at least one PDF was successfully generated).

@@ -1,0 +1,17 @@
+[
+  {
+    "system": "Analytics Server",
+    "count": 1,
+    "cpu": { "type": "static", "value": 32, "unit": "vCPU" },
+    "cpu_clocking": "3.4 GHz",
+    "memory": { "type": "static", "value": 256, "unit": "GB" },
+    "disk": [
+      { "size": { "type": "static", "value": 100,  "unit": "GB" }, "performance": "NVMe SSD",     "comment": "OS"        },
+      { "size": { "type": "static", "value": 20,   "unit": "TB" }, "performance": "7200 RPM HDD", "comment": "Data lake" },
+      { "size": { "type": "static", "value": 2,    "unit": "TB" }, "performance": "NVMe SSD",     "comment": "Hot cache" }
+    ],
+    "network": ["2× 25GbE"],
+    "software": ["Apache Spark 3.5", "Apache Hadoop 3.3"],
+    "comment": "Batch analytics and reporting"
+  }
+]

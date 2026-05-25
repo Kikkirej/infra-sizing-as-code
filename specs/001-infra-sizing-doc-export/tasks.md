@@ -44,39 +44,41 @@ can begin until the skeleton exists.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [X] T006 Define Python dataclasses in `src/loader.py` — `Partition`, `Server`, `FlavourImage`, `Flavour`, `Size`, `Product` (see data-model.md Python Internal Types section)
+- [X] T006 Define Python dataclasses in `src/loader.py` — `TypedValue` (fields: `type: str`, `unit: str`, `value: float = 0.0`, `formula: str = ""`; `render()` method: static → `"{int(value) if whole else value} {unit}"`, dynamic → `"{formula} {unit}"`), `Partition` (fields: `size: TypedValue`, `performance: str`, `comment: str = ""`), `Server` (fields: `system`, `cpu: TypedValue`, `cpu_clocking`, `memory: TypedValue`, `disk: list[Partition]`, `count: int = 1`, `network: list[str]`, `software: list[str]`, `comment: str`), `FlavourImage`, `Flavour` (no `suppress_count_column` property — count handled inline in renderer), `Size`, `Product` — see data-model.md Python Internal Types section
 - [X] T007 Implement fatal precondition checks in `src/loader.py` — `check_theme(repo_root)` raises `SystemExit` if `theme.yml` absent (FR-015); `check_products_json(repo_root)` raises `SystemExit` if `infra/products.json` absent or not valid JSON (FR-022)
 - [X] T008 Create `build.py` at repo root — thin entry point: calls `src.build_runner.run(repo_root=Path(__file__).parent)` and exits with its return code; stub `src/build_runner.py` with `run()` returning 0 (FR-008)
-- [X] T009 [P] Create `tests/fixtures/minimal-infra/` — minimum valid infra/ tree: one product (`product-a`), one size (`size-s`), one flavour (`flavour-f`), one server with two disk partitions; include all required JSON files and placeholder `.adoc` files
+- [X] T009 [P] Create `tests/fixtures/minimal-infra/` — minimum valid infra/ tree: one product (`product-a`), one size (`size-s`), one flavour (`flavour-f`), one server with two disk partitions using TypedValue format: `"cpu": {"type": "static", "value": 4, "unit": "vCPU"}`, `"memory": {"type": "static", "value": 16, "unit": "GB"}`, partition sizes as `{"type": "static", "value": 100, "unit": "GB"}`; include all required JSON files and placeholder `.adoc` files
 - [X] T010 [P] Create `theme.yml` at repo root — minimal asciidoctor-pdf theme: `extends: default`; `base.font_family: Helvetica`
+- [X] T043 Remove `suppress_count_column` property from `Flavour` dataclass in `src/loader.py` — the property `all(s.count == 1 for s in self.servers)` is no longer used; the renderer now handles count inline in the System cell
 
-**Checkpoint**: Foundation ready — fatal checks implemented, entry point wired, fixtures exist. User story implementation can begin.
+**Checkpoint**: Foundation ready — fatal checks implemented, entry point wired, fixtures exist with TypedValue format. User story implementation can begin.
 
 ---
 
 ## Phase 3: User Story 1 — Define Infrastructure and Generate PDF (Priority: P1) 🎯 MVP
 
 **Goal**: Load a full product definition from `infra/` and produce a correct PDF
-containing all infrastructure data in the mandated table format.
+containing all infrastructure data in the 5-column table format.
 
-**Independent Test**: Create `tests/fixtures/minimal-infra/` structure (done in T009),
-run `python build.py` from repo root, verify `output/product-a.adoc` and
-`output/product-a.pdf` are produced; open PDF and confirm 9-column server table
-with both disk partitions is present.
+**Independent Test**: Run `python build.py` from repo root against `tests/fixtures/minimal-infra/`,
+verify `output/product-a.adoc` and `output/product-a.pdf` are produced; confirm the
+server table has 5 columns (System | CPU | Memory | Disk | Comment), count shown
+inline as `[N]` in System when > 1, and Comment cell contains software + network
+bullet list followed by original comment text.
 
 ### Loading — `src/loader.py`
 
 - [X] T011 [P] [US1] Implement registry loaders: `load_product_registry(repo_root)` → validates products.json array, checks each product folder exists (FR-016, FR-023); `load_size_registry(product_dir)` → validates sizes.json, checks size folders (FR-019); `load_flavour_registry(size_dir)` → validates flavours.json, checks flavour folders (FR-020)
 - [X] T012 [P] [US1] Implement metadata loaders: `load_product_meta(product_dir)` → validates meta.json preamble/suffix path existence (FR-013, FR-015a); `load_size_meta(size_dir)` → loads prefix_text/suffix_text, treats absent/null as `""` (FR-013); `load_flavour_meta(flavour_dir)` → loads optional image entry, validates type is `file`|`mermaid` and value path exists (FR-018)
-- [X] T013 [US1] Implement `load_servers(flavour_dir)` in `src/loader.py` — parses `servers.json`; applies field defaults (`count=1`, `network=[]`, `software=[]`, `comment=""`); validates each server has ≥1 disk partition (FR-024); validates required string fields non-empty (FR-006, FR-007)
+- [X] T013 [US1] Implement `load_servers(flavour_dir)` in `src/loader.py` — parses `servers.json`; deserialises `cpu` and `memory` fields as `TypedValue` objects (validate `type` is `"static"|"dynamic"`; require `value > 0` when static; require non-empty `formula` when dynamic; `unit` always required); deserialises each `disk[].size` as `TypedValue` with same rules; applies field defaults (`count=1`, `network=[]`, `software=[]`, `comment=""`); validates each server has ≥1 disk partition (FR-024); validates required string fields non-empty (FR-006, FR-007)
 - [X] T014 [US1] Implement `load_product(repo_root, shortname, display_name)` in `src/loader.py` — orchestrates T011–T013 for one product; returns `Product` dataclass or appends to error list and returns `None`; covers: missing folder (FR-023), no sizes (FR-003), no flavours (FR-003), no servers (FR-003), missing preamble/suffix (FR-015a)
 
 ### Rendering — `src/renderer.py`
 
 - [X] T015 [US1] Implement `render_document_header(product)` in `src/renderer.py` — returns AsciiDoc document header string: `= {display_name}`, `:doctype: book`, `:toc:`, `:title-page:`, `:revdate: {date}`, `:nofooter:`
-- [X] T016 [P] [US1] Implement `render_server_table(servers)` in `src/renderer.py` — 9-column AsciiDoc table (`[cols="2,1,1,1,1,3,2,2,2",options="header"]`); use `a|` cells for Disk, Network, Software; render each partition as `* {size}, {performance} — {comment}` (omit ` — {comment}` if absent); render network/software items as `* {item}` each; blank cell when list empty (FR-006, FR-006a, FR-007, FR-007a)
+- [X] T016 [P] [US1] Re-implement `render_server_table(flavour)` in `src/renderer.py` — always 5 columns `[cols="15,14,13,43,33",options="header"]`; column headers: `System | CPU | Memory | Disk | Comment`; System cell: `{server.system}` when `count == 1`, `{server.system} [{server.count}]` when `count > 1`; CPU cell: `{server.cpu.render()} ({server.cpu_clocking})`; Memory cell: `{server.memory.render()}`; Disk cell: `a|` with nested `!===` table (`[cols="3,3,3"]` with headers `! Size ! Perform- +\nance ! Comment/ +\nUsage`, one row per partition using `partition.size.render()`, blank comment cell when absent); Comment cell: `a|` containing software items as `* {item}` bullets, then network items as `* {item}` bullets, then original comment text (if any) appended after bullets; blank cell when all three are absent/empty — remove all count-suppression logic and separate Network/Software columns (FR-006, FR-006a, FR-007, FR-007a)
 - [X] T017 [US1] Implement `render_flavour_section(flavour, product_shortname, size_shortname)` in `src/renderer.py` — heading (`=== {display_name}`); optional image: `image::infra/…[]` for `type:file`; mermaid block with embedded `.mmd` content for `type:mermaid`; optional `include::infra/…/preamble.adoc[]`; server table from T016; optional `include::infra/…/suffix.adoc[]` (FR-017, FR-018)
-- [X] T018 [US1] Implement `render_size_section(size, product_shortname, is_single_size)` in `src/renderer.py` — conditional `== {display_name}` heading (suppress when `is_single_size=True`: FR-004); `{prefix_text}`; flavour sections from T017; `{suffix_text}` (FR-005)
+- [X] T018 [US1] Implement `render_size_section(size, product_shortname, is_single_size)` in `src/renderer.py` — conditional `== {display_name}` heading (suppress when `is_single_size=True`: FR-004, SC-003); `{prefix_text}`; flavour sections from T017; `{suffix_text}` (FR-005)
 - [X] T019 [US1] Implement `render_product_document(product, build_date)` in `src/renderer.py` — assembles full document: header + `include::infra/preamble.adoc[]` + `include::infra/{shortname}/preamble.adoc[]` + size sections (pass `is_single_size=len(sizes)==1`) + `include::infra/{shortname}/suffix.adoc[]` + `include::infra/suffix.adoc[]`; all paths relative to repo root (resolved via `-B` flag) (FR-009, FR-010, FR-011, FR-013a)
 
 ### Stage 1 — `src/stages/generate.py`
@@ -89,14 +91,14 @@ with both disk partitions is present.
 
 ### Unit Tests
 
-- [X] T022 [P] [US1] Write `tests/unit/test_loader.py` — test: valid servers.json loads correctly; empty `disk` raises validation error (FR-024); missing `sizes.json` triggers product error; `count` defaults to 1; absent `network`/`software` default to `[]`
-- [X] T023 [P] [US1] Write `tests/unit/test_renderer.py` — test: `render_server_table()` produces correct 9-column table; single partition renders one bullet; multi-partition renders multiple bullets; empty network → blank `a|` cell; `render_size_section()` suppresses heading when `is_single_size=True` (FR-004); `render_flavour_section()` emits no `include::` line when `has_preamble=False` and no `include::` line when `has_suffix=False` (FR-017)
+- [X] T022 [P] [US1] Write `tests/unit/test_loader.py` — test: valid servers.json with TypedValue cpu/memory/disk.size loads into correct dataclasses; static TypedValue with `value: 8, unit: "vCPU"` → `render()` returns `"8 vCPU"`; dynamic TypedValue with `formula: "n × 4", unit: "vCPU"` → `render()` returns `"n × 4 vCPU"`; integer static value renders without decimal (`8` not `8.0`); empty `disk` raises validation error (FR-024); missing required `unit` in TypedValue raises validation error; `count` defaults to 1; absent `network`/`software` default to `[]`
+- [X] T023 [P] [US1] Rewrite `tests/unit/test_renderer.py` for new 5-column layout — test: `render_server_table()` always produces 5 columns (`[cols="15,14,13,43,33"` in output); server with `count == 1` → System cell is plain `{system}` with no count annotation; server with `count > 1` → System cell is `{system} [{count}]` (e.g. `Application Server [3]`); CPU cell format is `"{cpu.render()} ({cpu_clocking})"`; Disk cell contains `!===` nested table; Comment cell contains software bullets then network bullets then comment text; server with no software/network/comment → blank `a|` cell; `render_size_section()` suppresses heading when `is_single_size=True` (FR-004); `render_flavour_section()` emits no `include::` line when `has_preamble=False` and no `include::` when `has_suffix=False` (FR-017) — remove all old suppress_count_column / separate-network-software-column tests
 
 ### Wire-Up
 
 - [X] T024 [US1] Wire full US1 pipeline in `src/build_runner.py` — `run()` calls: `check_theme()`, `check_products_json()`, `load_product_registry()`, `load_product()` for each entry, `generate()`, `build_pdf()`; prints progress to stdout; prints errors to stderr; returns 1 if errors else 0
 
-**Checkpoint**: Run `python build.py` against `tests/fixtures/minimal-infra/` (with a `theme.yml`). Verify `output/product-a.pdf` is produced and contains a 9-column server table with two disk partition bullets.
+**Checkpoint**: Run `python build.py` against `tests/fixtures/minimal-infra/` (with a `theme.yml`). Verify `output/product-a.pdf` is produced; open PDF and confirm server table has 5 columns, count inline in System cell, and software+network+comment in Comment cell.
 
 ---
 
@@ -109,9 +111,9 @@ correct section order; one product failure does not block others.
 verify two PDFs are produced. Then deliberately break one product (remove its
 `sizes.json`); verify one PDF is produced, one error is reported, exit code is 1.
 
-- [X] T025 [P] [US2] Add a second product (`product-b`) to `tests/fixtures/minimal-infra/products.json` and create its full directory structure in `tests/fixtures/minimal-infra/product-b/` — distinct sizes and flavours from `product-a`
+- [X] T025 [P] [US2] Add a second product (`product-b`) to `tests/fixtures/minimal-infra/products.json` and create its full directory structure in `tests/fixtures/minimal-infra/product-b/` — distinct sizes and flavours from `product-a`, all servers using TypedValue format
 - [X] T026 [US2] Validate `render_product_document()` embeds the correct common preamble/suffix includes and that product-specific preamble/suffix includes differ per product — assert generated `.adoc` content in `tests/unit/test_renderer.py` (FR-010, FR-011)
-- [X] T027 [US2] Validate mandated section order in generated `.adoc` for multi-product build: `header → include::infra/preamble.adoc[] → include::infra/{p}/preamble.adoc[] → sizes → include::infra/{p}/suffix.adoc[] → include::infra/suffix.adoc[]` — assert in `tests/unit/test_renderer.py` (FR-009)
+- [X] T027 [US2] Validate mandated section order in generated `.adoc` for multi-product build: `header → include::infra/preamble.adoc[] → include::infra/{p}/preamble.adoc[] → sizes → include::infra/{p}/suffix.adoc[] → include::infra/suffix.adoc[]` — assert in `tests/unit/test_renderer.py` (FR-009, SC-002)
 - [X] T028 [US2] Test per-product error isolation in `tests/unit/test_loader.py` — simulate `load_product()` for two products where one has no sizes; assert errors list has one entry, the valid product still returns a `Product` object (FR-008a)
 - [X] T029 [US2] Write integration test `tests/integration/test_build.py` (`@pytest.mark.integration`) — run `build.py` against two-product fixture; assert exactly 2 `.pdf` files in `output/`; assert exit code 0
 
@@ -142,14 +144,14 @@ verify ZIP contains only the successful PDF(s) and exit code is 1.
 
 **Purpose**: Documentation, CI/CD pipelines, sample infra, and final validation.
 
-- [X] T035 [P] Create `docs/infra-sizing-doc-export/file-structure.md` — document the complete `infra/` directory layout, file naming conventions, registry file schema, and build output structure (constitution V)
+- [X] T035 [P] Create `docs/infra-sizing-doc-export/file-structure.md` — document the complete `infra/` directory layout, file naming conventions, registry file schema, TypedValue JSON format, and build output structure (constitution V)
 - [X] T036 [P] Create `README.md` at repo root — include: `docker build` command, `docker run` command (FR-021), quickstart steps, link to `docs/infra-sizing-doc-export/file-structure.md`
 - [X] T037 [P] Create `.gitlab-ci.yml` at repo root — `build-docs` job using the Docker image; `script: python3 build.py`; `artifacts: paths: [output/*.pdf, output/documents.zip]` with `when: always` (constitution IV; see `contracts/build-contract.md`)
 - [X] T038 [P] Create `.github/workflows/build.yml` — equivalent GitHub Actions pipeline: checkout, docker build, docker run, upload-artifact with `if: always()` (constitution IV; see `contracts/build-contract.md`)
-- [X] T039 [P] Create sample `infra/` structure at repo root — `products.json`, `preamble.adoc`, `suffix.adoc`, and one complete product directory — gives users a working starting point
-- [X] T040 Run `quickstart.md` validation — (a) execute `docker build` + `docker run` against the 1-product sample `infra/` from T039; verify PDF and ZIP produced; (b) run against a 5-product × 3-size fixture (create inline or extend T039 sample) and confirm the build completes within 5 minutes (SC-001); fix any discrepancies
+- [X] T039 [P] Create sample `infra/` structure at repo root — `products.json` with two products (`acme-crm`, `acme-erp`), `preamble.adoc`, `suffix.adoc`, and complete product directories for both (multiple sizes and flavours per product); all `servers.json` files use TypedValue format for `cpu`, `memory`, and `disk[].size` — serves as the working example from `quickstart.md`
+- [X] T040 Re-run quickstart validation after new rendering — (a) execute `docker build` + `docker run` against the 2-product sample `infra/` from T039 (after T016 + T043 complete); verify 2 PDFs and ZIP produced; open PDFs and confirm 5-column table (System | CPU | Memory | Disk | Comment), count shown as `[N]` in System cell when > 1, and software+network+comment merged in Comment cell (SC-004); (b) run against a 5-product × 3-size fixture and confirm build completes within 5 minutes (SC-001); fix any discrepancies
 - [X] T041 [P] Review and finalise `.gitignore` — confirm `output/`, `__pycache__/`, `.pytest_cache/`, `*.egg-info/` all excluded
-- [X] T042 Final code review pass — verify: all `src/` modules have correct docstring-free, well-named functions; `build.py` delegates to `src/build_runner.py`; no dead code; stdlib-only imports throughout
+- [X] T042 Final code review pass — verify: all `src/` modules have correct docstring-free, well-named functions; `build.py` delegates to `src/build_runner.py`; no dead code; stdlib-only imports throughout; TypedValue used consistently for cpu/memory/partition.size with no free-text string fallback
 
 ---
 
@@ -165,85 +167,49 @@ verify ZIP contains only the successful PDF(s) and exit code is 1.
   - US2 and US3 can proceed in parallel after Phase 3 completes
 - **Polish (Final Phase)**: Depends on Phases 3, 4, 5 all complete
 
-### Within Phase 3 (US1)
+### Open Task Dependencies
 
-- T011 [P] and T012 [P]: parallel — independent loaders, different functions
-- T013: after T011 (uses registry loading pattern)
-- T014: after T011, T012, T013 — orchestrates all loaders
-- T015, T016 [P]: parallel — independent rendering functions
-- T017: after T016 (uses server table renderer)
-- T018: after T017 (uses flavour section renderer)
-- T019: after T018 (uses size section renderer)
-- T020: after T019 (uses product document renderer)
-- T021: after T020 (processes `.adoc` output)
-- T022 [P], T023 [P]: parallel — can be written alongside implementation
-- T024: after T014, T021 (wires all loaders and stages)
+- T043 first (remove `suppress_count_column` before T016 since T016 must not use it)
+- T016 [P] after T043 (new render_server_table implementation)
+- T023 [P] after T016 (tests must match new column layout)
+- T040 after T016 + T023 (re-validation needs correct renderer)
+
+T016 and T023 can be written in parallel (both after T043).
 
 ---
 
 ## Parallel Examples
 
-### Phase 3 (US1) — Loading Layer
+### Current Open Tasks
 ```
-Parallel: T011 (registry loaders) + T012 (metadata loaders)
-Then sequential: T013 (server loader) → T014 (load_product orchestrator)
-```
-
-### Phase 3 (US1) — Rendering Layer
-```
-Parallel: T015 (header) + T016 (server table)
-Then sequential: T017 (flavour) → T018 (size) → T019 (product document)
-```
-
-### Phase 3 (US1) — Tests
-```
-Parallel alongside implementation: T022 (loader tests) + T023 (renderer tests)
-```
-
-### Phase 4 + Phase 5 after Phase 3 completes
-```
-Parallel: Phase 4 (US2 multi-product) + Phase 5 (US3 archive)
-```
-
-### Final Phase
-```
-Parallel: T035 (docs) + T036 (README) + T037 (GitLab CI) + T038 (GitHub Actions) + T039 (sample infra) + T041 (gitignore review)
-Then: T040 (quickstart validation) → T042 (final review)
+Sequential: T043 (remove suppress_count_column) → then parallel:
+  T016 (re-implement render_server_table — 5 columns, count inline, comment merged)
+  T023 (rewrite renderer tests for new layout)
+Then: T040 (re-run docker validation)
 ```
 
 ---
 
 ## Implementation Strategy
 
-### MVP: User Story 1 Only (Phases 1–3)
+### Remaining Work (open tasks: T043, T016, T023, T040)
 
-1. Phase 1: Setup → skeleton exists
-2. Phase 2: Foundational → fatal checks + entry point + fixtures
-3. Phase 3: US1 → full single-product definition-to-PDF pipeline
-4. **STOP AND VALIDATE**: Run against `tests/fixtures/minimal-infra/`; open PDF; confirm 9-column table, partition rendering, single-size suppression
-5. Ship MVP if ready
+1. T043 — remove `suppress_count_column` from `Flavour` in `src/loader.py`
+2. T016 — re-implement `render_server_table()`: 5 cols, `{system} [{count}]` when count > 1, Comment cell = software + network + original comment
+3. T023 — rewrite renderer unit tests to cover new 5-column rendering
+4. T040 — re-run docker build + run to validate new rendered output
 
-### Incremental Delivery
+### MVP: Minimal Change Path
 
-1. Phases 1–3 → single product PDF pipeline (MVP)
-2. Phase 4 (US2) → multi-product build, error isolation
-3. Phase 5 (US3) → ZIP archive
-4. Final Phase → CI/CD, documentation, sample infra
+1. T043: 3-line change in `src/loader.py` (remove property)
+2. T016: rewrite `render_server_table()` in `src/renderer.py`
+3. T023: rewrite `tests/unit/test_renderer.py`
+4. T040: docker validate
 
-### Parallel Team Strategy
-
-After Phase 2 completes:
-- **Developer A**: Phase 3 (US1) — loading + rendering + Stage 1 + Stage 2
-- **Developer B**: Phase 5 (US3) — Stage 3 (archive) — depends on Stage 2 interface only
-- After Phase 3: Developer B continues US3 integration; Developer A moves to Phase 4 (US2)
-
----
-
-## Notes
+### Notes
 
 - No external Python packages — stdlib only (`json`, `pathlib`, `subprocess`, `zipfile`, `sys`, `datetime`)
 - Unit tests (no toolchain) run locally; integration tests (`@pytest.mark.integration`) run in Docker/CI only
-- Commit after each completed phase checkpoint
-- The `output/` directory is gitignored; never commit generated `.adoc`, `.pdf`, or `.zip` files
+- The JSON data model is unchanged — `network`, `software`, `comment` remain separate fields in `servers.json`; only the renderer changes
 - All `include::` paths in generated `.adoc` are relative to repo root; asciidoctor-pdf resolves them via `-B {repo_root}`
-- Every FR tag in task descriptions maps to a specific requirement in `spec.md`
+- TypedValue used for `cpu`, `memory`, `Partition.size` only — `cpu_clocking`, `performance`, `network`, `software` remain free-text strings
