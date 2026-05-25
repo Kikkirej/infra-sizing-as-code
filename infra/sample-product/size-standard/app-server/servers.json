@@ -1,0 +1,29 @@
+[
+  {
+    "system": "Application Server",
+    "count": 2,
+    "cpu": "4 vCPU",
+    "cpu_clocking": "3.0 GHz",
+    "memory": "16 GB",
+    "disk": [
+      { "size": "100 GB", "performance": "SSD", "comment": "OS + Application" },
+      { "size": "500 GB", "performance": "HDD", "comment": "Data" }
+    ],
+    "network": ["2× 10GbE"],
+    "software": ["Java 17", "NGINX 1.25"],
+    "comment": "Primary application tier"
+  },
+  {
+    "system": "Database Server",
+    "count": 1,
+    "cpu": "8 vCPU",
+    "cpu_clocking": "2.5 GHz",
+    "memory": "64 GB",
+    "disk": [
+      { "size": "1 TB", "performance": "NVMe SSD", "comment": "Database storage" }
+    ],
+    "network": ["1× 25GbE"],
+    "software": ["PostgreSQL 15"],
+    "comment": "Primary database"
+  }
+]
