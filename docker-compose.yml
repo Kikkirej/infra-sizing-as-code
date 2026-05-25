@@ -1,0 +1,23 @@
+services:
+  backend:
+    build:
+      context: ./src/web-editor/backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./infra:/repo/infra
+      - ./.git:/repo/.git:ro
+      - ${SSH_AUTH_SOCK}:/ssh-agent
+    environment:
+      - SSH_AUTH_SOCK=/ssh-agent
+      - REPO_ROOT=/repo
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./src/web-editor/frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    restart: unless-stopped

@@ -1,0 +1,14 @@
+.git/
+node_modules/
+dist/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+output/
+*.log
+.env
+specs/
+docs/
+.specify/
+.github/
