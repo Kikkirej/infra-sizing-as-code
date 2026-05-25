@@ -221,10 +221,10 @@ confirm only the second product's files are written and the commit appears in `g
 
 - **FR-006**: Users MUST be able to edit all server fields: system name, count, CPU (TypedValue), CPU clocking, memory (TypedValue), disk partitions, network items, software items, and comment.
 - **FR-007**: The editor MUST support both static TypedValues (numeric value + unit from registry) and dynamic TypedValues (formula string + unit from registry) for CPU, memory, and disk partition size.
-- **FR-008**: Users MUST be able to edit product metadata: shortname and display name.
-- **FR-009**: Users MUST be able to edit size metadata: shortname, display name, prefix text, and suffix text.
-- **FR-010**: Users MUST be able to edit flavour metadata: shortname, display name, and image reference.
-- **FR-011**: All edits MUST be held in memory; no file on disk is modified until the user explicitly commits.
+- **FR-008**: Users MUST be able to edit product metadata: display name. Shortname is set only when creating a new product (ADDED state) and is read-only for existing products (shortname = directory key; renaming is out of scope for v1).
+- **FR-009**: Users MUST be able to edit size metadata: display name, prefix text, and suffix text. Shortname is set only when creating a new size (ADDED state) and is read-only for existing sizes.
+- **FR-010**: Users MUST be able to edit flavour metadata: display name and image reference. Shortname is set only when creating a new flavour (ADDED state) and is read-only for existing flavours.
+- **FR-011**: All edits MUST be held in memory; no file on disk is modified until the user explicitly commits. (Exception: binary file uploads per FR-021 are written to disk immediately as they are not part of the in-memory JSON model.)
 - **FR-011a**: When the user navigates to a different tree node, any edits on the current node are automatically applied to the in-memory state without prompting.
 - **FR-012**: Nodes with in-memory changes MUST be visually distinguished in the tree (e.g., marked as modified).
 
@@ -240,7 +240,7 @@ confirm only the second product's files are written and the commit appears in `g
 - **FR-016**: Users MUST be able to add a new product from the tree root level.
 - **FR-017**: Users MUST be able to delete any entity from the tree, with a confirmation prompt; deletion is in-memory until commit.
 - **FR-017a**: Nodes deleted in memory MUST remain visible in the tree with strikethrough text and a red/warning color indicator; they MUST be removed from the tree only after the next successful commit. Operators can undo a pending deletion via the product-level reset action.
-- **FR-018**: Users MUST be able to copy an existing entity (and all its children) and paste it under a compatible parent node; if the shortname conflicts with an existing sibling, the editor automatically appends `-copy` to the shortname.
+- **FR-018**: Users MUST be able to copy an existing entity (and all its children) and paste it under a compatible parent node; if the shortname conflicts with an existing sibling, the editor automatically appends `-copy` to the shortname. If the `-copy` shortname also conflicts, the editor auto-increments with a numeric suffix (`-copy-2`, `-copy-3`, etc.) until a unique name is found.
 - **FR-019**: The editor MUST validate required fields (non-empty system name, at least one disk partition per server) before allowing commit.
 
 **File Upload**
