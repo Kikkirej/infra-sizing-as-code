@@ -1,0 +1,32 @@
+[
+  {
+    "system": "Primary Database",
+    "count": 1,
+    "cpu": { "type": "static", "value": 64, "unit": "vCPU" },
+    "cpu_clocking": "3.8 GHz",
+    "memory": { "type": "static", "value": 1024, "unit": "GB" },
+    "disk": [
+      { "size": { "type": "static", "value": 100,  "unit": "GB" }, "performance": "NVMe SSD",     "comment": "OS"   },
+      { "size": { "type": "static", "value": 40,   "unit": "TB" }, "performance": "NVMe SSD",     "comment": "Data" },
+      { "size": { "type": "static", "value": 8,    "unit": "TB" }, "performance": "NVMe SSD",     "comment": "Logs" }
+    ],
+    "network": ["4× 25GbE"],
+    "software": ["Oracle DB 19c"],
+    "comment": ""
+  },
+  {
+    "system": "Standby Database",
+    "count": 2,
+    "cpu": { "type": "static", "value": 64, "unit": "vCPU" },
+    "cpu_clocking": "3.8 GHz",
+    "memory": { "type": "static", "value": 1024, "unit": "GB" },
+    "disk": [
+      { "size": { "type": "static", "value": 100,  "unit": "GB" }, "performance": "NVMe SSD",     "comment": "OS"   },
+      { "size": { "type": "static", "value": 40,   "unit": "TB" }, "performance": "NVMe SSD",     "comment": "Data" },
+      { "size": { "type": "static", "value": 8,    "unit": "TB" }, "performance": "NVMe SSD",     "comment": "Logs" }
+    ],
+    "network": ["4× 25GbE"],
+    "software": ["Oracle DB 19c"],
+    "comment": "Data Guard standby"
+  }
+]

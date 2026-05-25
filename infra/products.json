@@ -1,3 +1,4 @@
 [
-  { "shortname": "sample-product", "display_name": "Sample Product" }
+  { "shortname": "acme-crm", "display_name": "ACME CRM Platform" },
+  { "shortname": "acme-erp", "display_name": "ACME ERP Platform" }
 ]

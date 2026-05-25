@@ -23,6 +23,44 @@ ProductRegistry (infra/products.json)
 
 ## Entities
 
+### TypedValue
+
+**Used by**: `Server.cpu`, `Server.memory`, `Partition.size`
+
+A typed quantity with a unit. The `type` field selects between a fixed value
+and a formula-based dynamic value.
+
+**Shape (static)**:
+```json
+{ "type": "static", "value": 8, "unit": "vCPU" }
+```
+
+**Shape (dynamic)**:
+```json
+{ "type": "dynamic", "formula": "n × 4", "unit": "vCPU" }
+```
+
+**Fields**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| type | string | yes | `"static"` or `"dynamic"` |
+| value | number | if static | Numeric quantity (integer or float) |
+| formula | string | if dynamic | Human-readable expression (e.g. `"n × 4"`); rendered as-is in PDF |
+| unit | string | yes | Unit label (e.g. `"vCPU"`, `"GB"`, `"TB"`) |
+
+**Rendered form**:
+- Static: `{value} {unit}` → `8 vCPU`, `32 GB`, `500 GB`
+  - Integer values display without decimal: `8` not `8.0`
+- Dynamic: `{formula} {unit}` → `n × 4 vCPU`, `n × 2 GB`
+
+**Validation rules**:
+- `type` must be `"static"` or `"dynamic"`
+- `value` required and must be a positive number when `type == "static"`
+- `formula` required and non-empty when `type == "dynamic"`
+- `unit` required and non-empty in both cases
+
+---
+
 ### ProductRegistry
 
 **File**: `infra/products.json`
@@ -201,18 +239,51 @@ ProductRegistry (infra/products.json)
   {
     "system": "Web Server",
     "count": 3,
-    "cpu": "4 vCPU",
+    "cpu": { "type": "static", "value": 4, "unit": "vCPU" },
     "cpu_clocking": "3.2 GHz",
-    "memory": "32 GB",
+    "memory": { "type": "static", "value": 32, "unit": "GB" },
     "disk": [
-      { "size": "500 GB", "performance": "NVMe SSD", "comment": "OS + App" },
-      { "size": "2 TB",   "performance": "7200 RPM HDD" }
+      {
+        "size": { "type": "static", "value": 500, "unit": "GB" },
+        "performance": "NVMe SSD",
+        "comment": "OS + App"
+      },
+      {
+        "size": { "type": "static", "value": 2, "unit": "TB" },
+        "performance": "7200 RPM HDD"
+      }
     ],
     "network": ["2× 10GbE", "1× 1GbE"],
     "software": ["NGINX 1.25", "Java 17"],
     "comment": "Primary web tier"
   }
 ]
+```
+
+**Dynamic value example** (CPU scales with cluster size):
+```json
+{
+  "system": "Worker Node",
+  "count": 1,
+  "cpu": { "type": "dynamic", "formula": "n × 4", "unit": "vCPU" },
+  "cpu_clocking": "3.0 GHz",
+  "memory": { "type": "dynamic", "formula": "n × 8", "unit": "GB" },
+  "disk": [
+    {
+      "size": { "type": "static", "value": 100, "unit": "GB" },
+      "performance": "NVMe SSD",
+      "comment": "OS"
+    },
+    {
+      "size": { "type": "dynamic", "formula": "n × 500", "unit": "GB" },
+      "performance": "NVMe SSD",
+      "comment": "Data (per node)"
+    }
+  ],
+  "network": [],
+  "software": [],
+  "comment": "Scale n = number of worker nodes"
+}
 ```
 
 **Validation rules**:
@@ -230,16 +301,30 @@ ProductRegistry (infra/products.json)
 |-------|------|----------|---------|-------------|
 | system | string | yes | — | Purpose description; first table column |
 | count | integer | no | 1 | Number of instances; must be ≥ 1 |
-| cpu | string | yes | — | CPU specification (free-text) |
-| cpu_clocking | string | yes | — | Clock speed (free-text) |
-| memory | string | yes | — | Memory specification (free-text) |
+| cpu | TypedValue | yes | — | CPU quantity + unit (e.g. `8 vCPU`); merged with cpu_clocking in table |
+| cpu_clocking | string | yes | — | Clock speed free-text (e.g. `"3.2 GHz"`); rendered in parentheses after cpu |
+| memory | TypedValue | yes | — | Memory quantity + unit (e.g. `32 GB`) |
 | disk | array | yes | — | List of Partition objects; min 1 (FR-024) |
 | network | array\<string\> | no | [] | Network interfaces; empty → blank cell |
 | software | array\<string\> | no | [] | Software components; empty → blank cell |
 | comment | string | no | "" | Optional server-level note |
 
-**Table column order** (FR-006 / FR-007a):
-System → Count → CPU → CPU Clocking → Memory → Disk → Network → Software → Comment
+**Table column order** (rendered): System | CPU | Memory | Disk | Comment
+
+**System cell rendering**:
+- `count == 1`: `{system}` (no count annotation)
+- `count > 1`: `{system} [{count}]` — e.g. `Application Server [3]`
+
+**Comment cell rendering**: Network items and Software items are folded into the
+Comment cell alongside the original comment text.
+- Software items first, then network items (each as `* {item}` bullet)
+- Original comment text appended after bullets (if non-empty)
+- If all three are absent/empty: blank `a|` cell
+
+**CPU column rendering**: CPU and CPU Clocking are always merged into a single column.
+Format: `{cpu_rendered} ({cpu_clocking})`
+- Static example: `8 vCPU (3.2 GHz)`
+- Dynamic example: `n × 4 vCPU (3.0 GHz)`
 
 ---
 
@@ -250,16 +335,30 @@ System → Count → CPU → CPU Clocking → Memory → Disk → Network → So
 **Fields**:
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| size | string | yes | Storage capacity (free-text, e.g. "500 GB") |
+| size | TypedValue | yes | Storage quantity + unit (e.g. `{ "type": "static", "value": 500, "unit": "GB" }`) |
 | performance | string | yes | Storage tier (free-text, e.g. "NVMe SSD") |
 | comment | string | no | Optional label (e.g. "OS + App") |
 
-**Rendered format** within Disk cell (AsciiDoc `a|` cell):
+**Rendered format — primary (nested table)** within Disk `a|` cell:
+```asciidoc
+[cols="3,3,3",options="header"]
+!===
+! Size ! Perform- +
+ance ! Comment/ +
+Usage
+! 500 GB ! NVMe SSD ! OS + App
+! 2 TB ! 7200 RPM HDD !
+! n × 500 GB ! NVMe SSD ! Data (per node)
+!===
 ```
-* 500 GB, NVMe SSD — OS + App
-* 2 TB, 7200 RPM HDD
-```
-(comment omitted when absent)
+Comment cell is blank when absent. `TypedValue.render()` produces the Size cell value.
+
+**Rendered format — fallback** (if nested table layout is unacceptable after visual testing):
+- Main Disk cell: `{total_storage} ({n} partitions)` — e.g. `1.6 TB (3 partitions)`
+- Separate titled table after the server table: `.Partitions — {server.system}` with
+  columns Size / Performance / Comment, using standard `|===` syntax.
+
+See `research.md` § 3 for the full fallback AsciiDoc template.
 
 ---
 
@@ -270,17 +369,30 @@ deserialising JSON. They mirror the JSON entities above.
 
 ```python
 @dataclass
+class TypedValue:
+    type: str           # "static" | "dynamic"
+    unit: str
+    value: float = 0.0  # used when type == "static"
+    formula: str = ""   # used when type == "dynamic"
+
+    def render(self) -> str:
+        if self.type == "static":
+            v = int(self.value) if self.value == int(self.value) else self.value
+            return f"{v} {self.unit}"
+        return f"{self.formula} {self.unit}"
+
+@dataclass
 class Partition:
-    size: str
+    size: TypedValue
     performance: str
     comment: str = ""
 
 @dataclass
 class Server:
     system: str
-    cpu: str
+    cpu: TypedValue
     cpu_clocking: str
-    memory: str
+    memory: TypedValue
     disk: list[Partition]          # min 1
     count: int = 1
     network: list[str] = field(default_factory=list)

@@ -120,6 +120,29 @@ The `image` key is optional. An empty object `{}` is valid.
 
 ---
 
+## TypedValue Schema (reusable)
+
+Used for `Server.cpu`, `Server.memory`, and `Partition.size`.
+
+**Static**:
+```json
+{ "type": "static", "value": 8, "unit": "vCPU" }
+```
+
+**Dynamic**:
+```json
+{ "type": "dynamic", "formula": "n × 4", "unit": "vCPU" }
+```
+
+| Field | Type | Required | Constraints |
+|-------|------|----------|------------|
+| type | string | yes | `"static"` or `"dynamic"` |
+| value | number | if static | Positive number |
+| formula | string | if dynamic | Non-empty string; rendered verbatim |
+| unit | string | yes | Non-empty (e.g. `"vCPU"`, `"GB"`, `"TB"`) |
+
+---
+
 ## `infra/{product}/{size}/{flavour}/servers.json` — Server Definitions
 
 ```json
@@ -127,12 +150,12 @@ The `image` key is optional. An empty object `{}` is valid.
   {
     "system": "<string, required>",
     "count": "<integer ≥ 1, optional, default 1>",
-    "cpu": "<string, required>",
+    "cpu": { "type": "static | dynamic", "value": "<number if static>", "formula": "<string if dynamic>", "unit": "<string>" },
     "cpu_clocking": "<string, required>",
-    "memory": "<string, required>",
+    "memory": { "type": "static | dynamic", "value": "<number if static>", "formula": "<string if dynamic>", "unit": "<string>" },
     "disk": [
       {
-        "size": "<string, required>",
+        "size": { "type": "static | dynamic", "value": "<number if static>", "formula": "<string if dynamic>", "unit": "<string>" },
         "performance": "<string, required>",
         "comment": "<string, optional>"
       }
@@ -150,9 +173,9 @@ The `image` key is optional. An empty object `{}` is valid.
 |-------|------|----------|---------|------------|
 | system | string | yes | — | Non-empty; purpose description |
 | count | integer | no | 1 | ≥ 1 |
-| cpu | string | yes | — | Non-empty |
-| cpu_clocking | string | yes | — | Non-empty |
-| memory | string | yes | — | Non-empty |
+| cpu | TypedValue | yes | — | See TypedValue schema above |
+| cpu_clocking | string | yes | — | Non-empty free-text; rendered in parentheses after cpu |
+| memory | TypedValue | yes | — | See TypedValue schema above |
 | disk | array | yes | — | Min 1 Partition (FR-024) |
 | network | array\<string\> | no | `[]` | May be absent or empty |
 | software | array\<string\> | no | `[]` | May be absent or empty |
@@ -164,6 +187,14 @@ Array must contain at least one Server.
 
 | Field | Type | Required | Constraints |
 |-------|------|----------|------------|
-| size | string | yes | Non-empty (e.g. `"500 GB"`) |
+| size | TypedValue | yes | See TypedValue schema; unit typically `"GB"` or `"TB"` |
 | performance | string | yes | Non-empty (e.g. `"NVMe SSD"`) |
 | comment | string | no | May be absent; treated as `""` |
+
+**Rendered table column order**:
+`System | CPU | Memory | Disk | Comment`
+
+- **System cell**: `{system}` when `count == 1`; `{system} [{count}]` when `count > 1`
+- **CPU cell**: merges `cpu` and `cpu_clocking` → `{cpu.render()} ({cpu_clocking})`
+- **Comment cell**: software items + network items (each as `* {item}` bullet) + original comment text
+  — Network and Software columns are not rendered separately; their content is folded into Comment

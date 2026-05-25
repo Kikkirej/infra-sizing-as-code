@@ -5,8 +5,40 @@ from pathlib import Path
 
 
 @dataclass
+class TypedValue:
+    type: str       # "static" | "dynamic"
+    unit: str
+    value: float = 0.0
+    formula: str = ""
+
+    def render(self) -> str:
+        if self.type == "static":
+            v = int(self.value) if self.value == int(self.value) else self.value
+            return f"{v} {self.unit}"
+        return f"{self.formula} {self.unit}"
+
+
+def _parse_typed_value(raw: dict, field_name: str, context: str) -> TypedValue:
+    t = raw.get("type")
+    if t not in ("static", "dynamic"):
+        raise ValueError(f"{context}: {field_name}.type must be 'static' or 'dynamic', got {t!r}")
+    unit = raw.get("unit", "")
+    if not unit:
+        raise ValueError(f"{context}: {field_name}.unit is required")
+    if t == "static":
+        value = raw.get("value")
+        if value is None or float(value) <= 0:
+            raise ValueError(f"{context}: {field_name}.value must be a positive number for static type")
+        return TypedValue(type="static", unit=unit, value=float(value))
+    formula = raw.get("formula", "")
+    if not formula:
+        raise ValueError(f"{context}: {field_name}.formula is required for dynamic type")
+    return TypedValue(type="dynamic", unit=unit, formula=formula)
+
+
+@dataclass
 class Partition:
-    size: str
+    size: TypedValue
     performance: str
     comment: str = ""
 
@@ -14,9 +46,9 @@ class Partition:
 @dataclass
 class Server:
     system: str
-    cpu: str
+    cpu: TypedValue
     cpu_clocking: str
-    memory: str
+    memory: TypedValue
     disk: list[Partition]
     count: int = 1
     network: list[str] = field(default_factory=list)
@@ -136,22 +168,30 @@ def load_servers(flavour_dir: Path) -> list[Server]:
     raw = json.loads(servers_json.read_text())
     servers = []
     for entry in raw:
+        system = entry.get("system", "")
+        context = f"server '{system}' in {flavour_dir}"
+
         disk_raw = entry.get("disk", [])
         if not disk_raw:
-            raise ValueError(f"Server '{entry.get('system')}' in {flavour_dir} has no disk partitions")
-        partitions = [
-            Partition(
-                size=p["size"],
+            raise ValueError(f"Server '{system}' in {flavour_dir} has no disk partitions")
+
+        partitions = []
+        for p in disk_raw:
+            size_tv = _parse_typed_value(p["size"], "size", f"{context} partition")
+            partitions.append(Partition(
+                size=size_tv,
                 performance=p["performance"],
                 comment=p.get("comment", ""),
-            )
-            for p in disk_raw
-        ]
+            ))
+
+        cpu_tv = _parse_typed_value(entry["cpu"], "cpu", context)
+        memory_tv = _parse_typed_value(entry["memory"], "memory", context)
+
         servers.append(Server(
-            system=entry["system"],
-            cpu=entry["cpu"],
+            system=system,
+            cpu=cpu_tv,
             cpu_clocking=entry["cpu_clocking"],
-            memory=entry["memory"],
+            memory=memory_tv,
             disk=partitions,
             count=entry.get("count", 1),
             network=entry.get("network", []),

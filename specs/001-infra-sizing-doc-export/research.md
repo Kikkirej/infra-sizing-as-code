@@ -63,7 +63,6 @@ resolve relative to the repo root.
 :toc:
 :title-page:
 :revdate: {YYYY-MM-DD}
-:revnumber: {revnumber}
 :nofooter:
 
 include::infra/preamble.adoc[]
@@ -90,24 +89,14 @@ image::infra/{product}/{size}/{flavour}/{value}[]
 // Optional flavour preamble
 include::infra/{product}/{size}/{flavour}/preamble.adoc[]
 
-// Server table (one per flavour — FR-007a)
-[cols="2,1,1,1,1,3,2,2,2",options="header"]
+// Server table — 5 columns; no separate Count/Network/Software columns
+[cols="15,14,13,43,33",options="header"]
 |===
-| System | Count | CPU | CPU Clocking | Memory | Disk | Network | Software | Comment
+| System | CPU | Memory | Disk | Comment
 
-// — one row per server —
-| {system}
-| {count}
-| {cpu}
-| {cpu_clocking}
-| {memory}
-a|
-{disk_cells}
-a|
-{network_cells}
-a|
-{software_cells}
-| {comment}
+| {system_cell} | {cpu.render()} ({cpu_clocking}) | {memory.render()}
+a| {disk_cells}
+a| {comment_cell}
 
 |===
 
@@ -122,26 +111,97 @@ include::infra/{product_shortname}/suffix.adoc[]
 include::infra/suffix.adoc[]
 ```
 
-**Disk cell format** (using `a|` AsciiDoc cell for list support):
-```
-* {size}, {performance} — {comment}
-* {size}, {performance}
-```
-If a comment is absent, omit the ` — {comment}` part.
+**Server table column layout**:
+- Always 5 columns: **System** | **CPU** | **Memory** | **Disk** | **Comment**
+- No separate Count, Network, or Software columns
 
-**Network / Software cell format** (using `a|`):
+**System cell format**:
+- `count == 1`: `{system}` (no annotation)
+- `count > 1`: `{system} [{count}]` — e.g. `Application Server [3]`
+
+**Comment cell format**: Combines network items, software items, and the original
+comment string into a single `a|` cell. Build order:
+1. Software items (if any) — each as `* {item}` bullet
+2. Network items (if any) — each as `* {item}` bullet
+3. Original comment text (if non-empty) — appended after bullets
+
+Combined example:
+```asciidoc
+a|
+* OpenJDK 17
+* NGINX 1.25
+* 2× 10GbE
+
+Active/active pair
 ```
-* {item}
-* {item}
+
+When all three are empty/absent: blank `a|` cell.
+When only comment text (no network/software): plain text in `a|` cell.
+
+**Disk cell format — primary (nested table)**: Use AsciiDoc `!===` nested table
+inside the `a|` Disk cell. The `!` delimiter is the AsciiDoc convention for nested
+table rows/cells and is supported by asciidoctor-pdf.
+
+```asciidoc
+a|
+[cols="3,3,3",options="header"]
+!===
+! Size ! Perform- +
+ance ! Comment/ +
+Usage
+! 100 GB ! NVMe SSD ! OS
+! 500 GB ! NVMe SSD ! App data
+!===
 ```
-Empty list → blank cell (FR-006a).
+
+For a partition with no comment, the Comment cell is left blank:
+```asciidoc
+! 2 TB ! 7200 RPM HDD !
+```
+
+For a dynamic partition size:
+```asciidoc
+! n × 500 GB ! NVMe SSD ! Data (per node)
+```
+
+**Disk cell format — fallback (if nested table renders poorly in asciidoctor-pdf)**:
+Show a total storage summary in the main table cell and emit a separate partition
+detail table after the server table, one per server (labelled by system name).
+
+*Main cell (fallback)*: `{total_storage} ({n} partitions)`
+- Total storage computed by summing static TypedValues in GB, then auto-scaling:
+  if ≥ 1000 GB → display in TB. If any partition is dynamic: append `+ variable`.
+- Examples: `1.6 TB (3 partitions)`, `100 GB + variable (2 partitions)`
+- All dynamic: `variable (2 partitions)`
+
+*Separate partition table (fallback)*, emitted after each server table:
+```asciidoc
+.Partitions — {system_name}
+[cols="3,3,3",options="header"]
+|===
+| Size | Performance | Comment
+| 100 GB | NVMe SSD | OS
+| 500 GB | NVMe SSD | App data
+|===
+```
+
+When a flavour has multiple servers, each server gets its own titled partition table.
 
 **Single-size suppression (FR-004)**: When `len(sizes) == 1`, omit the
 `== {size_display_name}` heading. Prefix/suffix text and all content still render.
 
-**Rationale**: `a|` cells in AsciiDoc support full block content including lists,
-enabling structured rendering of disk partitions and multi-value fields. Inline
-list items (`* item`) are cleaner than `+` line-continuation for multi-value cells.
+**CPU column format** (merged CPU + CPU Clocking): The CPU and CPU Clocking
+fields are always rendered as a single column in the header and each row.
+Format: `{cpu.render()} ({cpu_clocking})` → e.g. `8 vCPU (3.2 GHz)` or
+`n × 4 vCPU (3.0 GHz)`. Column header: `CPU`.
+
+**Rationale**: Merging Count into the System name and folding Network/Software
+into Comment reduces the table from 7–8 columns to 5. Narrower tables fit better
+on A4 landscape and avoid line-wrapping in the Disk column. Count is still visible
+(as `[N]` suffix) for the reader; Network and Software remain queryable in the
+source JSON but are secondary information in the rendered view.
+AsciiDoc `!===` nested tables are supported in asciidoctor-pdf and give the
+cleanest tabular structure for partitions.
 
 ---
 
@@ -265,6 +325,42 @@ def run_build(repo_root: Path) -> int:
 
 **Rationale**: Centralised error accumulation matches FR-008a exactly.
 Fatal vs. product-level distinction mirrors the same pattern used for `theme.yml`.
+
+---
+
+## 9. TypedValue: Static vs Dynamic Quantities
+
+**Decision**: CPU, memory, and disk-partition size are modelled as `TypedValue`
+objects — `{ "type": "static", "value": <number>, "unit": "<string>" }` or
+`{ "type": "dynamic", "formula": "<string>", "unit": "<string>" }`. The unit
+is stored alongside the value, not embedded in a free-text string.
+
+**Rationale**: Separating value from unit enables consistent rendering without
+string parsing. Dynamic formulas are descriptive strings (e.g. `"n × 4"`) that
+express a scaling relationship; they are rendered verbatim in the PDF — the
+build tool does not evaluate them. This design is forward-compatible with future
+tooling that might compute or validate formula outputs.
+
+**Rendering**:
+- Static: `int(value) if value.is_integer() else value`, then `"{v} {unit}"` →
+  `8 vCPU`, `32 GB`, `0.5 TB`
+- Dynamic: `"{formula} {unit}"` → `n × 4 vCPU`, `n × 8 GB`
+
+**CPU + Clocking merge**: Always rendered as a single column — `{cpu.render()} ({cpu_clocking})`.
+Column header in AsciiDoc table is `CPU`. There is no separate CPU Clocking column.
+
+**Count column suppression**: Evaluated per flavour table.
+`suppress = all(s.count == 1 for s in flavour.servers)`.
+When suppressed, column is omitted from both header and all rows.
+
+**Alternatives considered**:
+- Free-text strings with embedded units (previous design) — rejected because
+  reliable parsing of `"8 vCPU"` or `"32 GB"` would require fragile regex;
+  programmatic rendering is cleaner.
+- Separate `value`, `unit`, `formula` top-level fields (flat structure) —
+  rejected; nesting under `type` makes the discriminated union intent explicit.
+- Enum type constants (`STATIC`, `DYNAMIC`) — rejected in favour of lowercase
+  strings for JSON readability and round-trip simplicity.
 
 ---
 

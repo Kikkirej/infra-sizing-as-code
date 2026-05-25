@@ -17,41 +17,53 @@ def render_document_header(product: Product) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _render_partition(p: Partition) -> str:
-    text = f"* {p.size}, {p.performance}"
-    if p.comment:
-        text += f" — {p.comment}"
-    return text
-
-
-def _render_list_cell(items: list[str]) -> str:
-    if not items:
-        return ""
-    return "\n".join(f"* {item}" for item in items)
-
-
-def render_server_table(servers: list[Server]) -> str:
+def _render_partition_table(partitions: list[Partition]) -> str:
     lines = [
-        '[cols="2,1,1,1,1,3,2,2,2",options="header"]',
-        "|===",
-        "| System | Count | CPU | CPU Clocking | Memory | Disk | Network | Software | Comment",
+        '[cols="3,3,3",options="header"]',
+        "!===",
+        "! Size ! Perform- +\nance ! Comment/ +\nUsage",
     ]
-    for server in servers:
-        disk_cell = "\n".join(_render_partition(p) for p in server.disk)
-        network_cell = _render_list_cell(server.network)
-        software_cell = _render_list_cell(server.software)
+    for p in partitions:
+        comment_cell = p.comment if p.comment else ""
+        lines.append(f"! {p.size.render()} ! {p.performance} ! {comment_cell}")
+    lines.append("!===")
+    return "\n".join(lines)
+
+
+def _render_comment_cell(server) -> str:
+    parts = []
+    for item in server.software:
+        parts.append(f"* {item}")
+    for item in server.network:
+        parts.append(f"* {item}")
+    if server.comment:
+        if parts:
+            parts.append("")
+        parts.append(server.comment)
+    return "\n".join(parts)
+
+
+def render_server_table(flavour: Flavour) -> str:
+    col_spec = '[cols="15,14,13,43,33",options="header"]'
+    header = "| System | CPU | Memory | Disk | Comment"
+    lines = [col_spec, "|===", header]
+
+    for server in flavour.servers:
+        system_cell = server.system if server.count == 1 else f"{server.system} [{server.count}]"
+        cpu_cell = f"{server.cpu.render()} ({server.cpu_clocking})"
+        memory_cell = server.memory.render()
+        disk_cell = _render_partition_table(server.disk)
+        comment_cell = _render_comment_cell(server)
+
         lines += [
             "",
-            f"| {server.system}",
-            f"| {server.count}",
-            f"| {server.cpu}",
-            f"| {server.cpu_clocking}",
-            f"| {server.memory}",
-            f"a| {disk_cell}",
-            f"a| {network_cell}",
-            f"a| {software_cell}",
-            f"| {server.comment}",
+            f"| {system_cell}",
+            f"| {cpu_cell}",
+            f"| {memory_cell}",
+            f"a|\n{disk_cell}",
+            f"a| {comment_cell}",
         ]
+
     lines.append("|===")
     return "\n".join(lines) + "\n"
 
@@ -77,7 +89,7 @@ def render_flavour_section(
             f"include::infra/{product_shortname}/{size_shortname}/{flavour.shortname}/preamble.adoc[]\n"
         )
 
-    parts.append(render_server_table(flavour.servers))
+    parts.append(render_server_table(flavour))
 
     if flavour.has_suffix:
         parts.append(
