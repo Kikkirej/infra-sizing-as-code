@@ -9,7 +9,7 @@ from services.writer import write_all
 from models.state import ChangeState
 
 router = APIRouter()
-REPO_ROOT = Path(os.environ.get("REPO_ROOT", Path(__file__).parents[5]))
+REPO_ROOT = Path(os.environ.get("REPO_ROOT", "."))
 
 
 def _get_repo():
@@ -66,6 +66,12 @@ def git_changes():
 
     if state.units.change != ChangeState.CLEAN:
         changes.append("infra/units.json")
+    if state.global_preamble_change != ChangeState.CLEAN:
+        changes.append("infra/preamble.adoc")
+    if state.global_suffix_change != ChangeState.CLEAN:
+        changes.append("infra/suffix.adoc")
+    if state.theme_change != ChangeState.CLEAN:
+        changes.append("theme.yml")
 
     return {"changes": list(dict.fromkeys(changes)), "count": len(set(changes))}
 
@@ -150,6 +156,9 @@ def commit(body: CommitBody):
                     sv.change = ChangeState.CLEAN
     state.products = {sn: p for sn, p in state.products.items() if p.change != ChangeState.DELETED}
     state.units.change = ChangeState.CLEAN
+    state.global_preamble_change = ChangeState.CLEAN
+    state.global_suffix_change = ChangeState.CLEAN
+    state.theme_change = ChangeState.CLEAN
 
     return {"commit_sha": commit_obj.hexsha[:7], "pushed": pushed}
 

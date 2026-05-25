@@ -16,6 +16,15 @@ def get_adoc(path: str):
     state = state_store.get_state()
     parts = path.split("/")
 
+    # Global: infra/preamble.adoc or infra/suffix.adoc
+    if len(parts) == 2 and parts[0] == "infra":
+        filename = parts[1].replace(".adoc", "")
+        if filename == "preamble":
+            return {"path": path, "content": state.global_preamble_content, "change": state.global_preamble_change}
+        if filename == "suffix":
+            return {"path": path, "content": state.global_suffix_content, "change": state.global_suffix_change}
+        raise HTTPException(400, "Unknown global adoc file")
+
     if len(parts) == 3 and parts[0] == "infra":
         product_sn = parts[1]
         filename = parts[2].replace(".adoc", "")
@@ -26,9 +35,9 @@ def get_adoc(path: str):
         change = p.preamble_change if filename == "preamble" else p.suffix_change
         return {"path": path, "content": content, "change": change}
 
-    if len(parts) == 6 and parts[0] == "infra":
+    if len(parts) == 5 and parts[0] == "infra":
         product_sn, size_sn, flavour_sn = parts[1], parts[2], parts[3]
-        filename = parts[5].replace(".adoc", "")
+        filename = parts[4].replace(".adoc", "")
         p = state.products.get(product_sn)
         if not p:
             raise HTTPException(404, "Product not found")
@@ -45,10 +54,37 @@ def get_adoc(path: str):
     raise HTTPException(400, "Unrecognised adoc path")
 
 
+@router.get("/theme")
+def get_theme():
+    state = state_store.get_state()
+    return {"content": state.theme_content, "change": state.theme_change}
+
+
+@router.put("/theme")
+def update_theme(body: AdocUpdate):
+    state = state_store.get_state()
+    state.theme_content = body.content
+    state.theme_change = ChangeState.MODIFIED
+    return {"change": ChangeState.MODIFIED}
+
+
 @router.put("/adoc/{path:path}")
 def update_adoc(path: str, body: AdocUpdate):
     state = state_store.get_state()
     parts = path.split("/")
+
+    # Global: infra/preamble.adoc or infra/suffix.adoc
+    if len(parts) == 2 and parts[0] == "infra":
+        filename = parts[1].replace(".adoc", "")
+        if filename == "preamble":
+            state.global_preamble_content = body.content
+            state.global_preamble_change = ChangeState.MODIFIED
+        elif filename == "suffix":
+            state.global_suffix_content = body.content
+            state.global_suffix_change = ChangeState.MODIFIED
+        else:
+            raise HTTPException(400, "Unknown global adoc file")
+        return {"path": path, "change": ChangeState.MODIFIED}
 
     if len(parts) == 3 and parts[0] == "infra":
         product_sn = parts[1]
@@ -66,9 +102,9 @@ def update_adoc(path: str, body: AdocUpdate):
             p.change = ChangeState.MODIFIED
         return {"path": path, "change": ChangeState.MODIFIED}
 
-    if len(parts) == 6 and parts[0] == "infra":
+    if len(parts) == 5 and parts[0] == "infra":
         product_sn, size_sn, flavour_sn = parts[1], parts[2], parts[3]
-        filename = parts[5].replace(".adoc", "")
+        filename = parts[4].replace(".adoc", "")
         p = state.products.get(product_sn)
         s = p.sizes.get(size_sn) if p else None
         f = s.flavours.get(flavour_sn) if s else None

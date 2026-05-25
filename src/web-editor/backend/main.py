@@ -10,7 +10,7 @@ from services import state_store
 from routers import tree, products, adoc, files, units, git as git_router
 
 
-REPO_ROOT = Path(os.environ.get("REPO_ROOT", Path(__file__).parents[4]))
+REPO_ROOT = Path(os.environ.get("REPO_ROOT", "."))
 
 
 @asynccontextmanager

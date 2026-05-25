@@ -8,6 +8,25 @@
     </div>
 
     <div v-else class="tree-root">
+      <!-- Global files -->
+      <div class="tree-section-label">Global</div>
+      <div class="tree-node adoc-node global-node"
+        :class="[adocClass(store.treeData.globals?.preamble_change), { 'is-selected': store.selectedNode?.path === 'infra/preamble.adoc' }]"
+        @click="selectAdoc('infra/preamble.adoc', 'preamble')">
+        <span class="node-label">preamble.adoc</span>
+      </div>
+      <div class="tree-node adoc-node global-node"
+        :class="[adocClass(store.treeData.globals?.suffix_change), { 'is-selected': store.selectedNode?.path === 'infra/suffix.adoc' }]"
+        @click="selectAdoc('infra/suffix.adoc', 'suffix')">
+        <span class="node-label">suffix.adoc</span>
+      </div>
+      <div class="tree-node theme-node global-node"
+        :class="[adocClass(store.treeData.globals?.theme_change), { 'is-selected': store.selectedNode?.type === 'theme' }]"
+        @click="store.selectNode({ type: 'theme' })">
+        <span class="node-label">theme.yml</span>
+      </div>
+
+      <div class="tree-section-label">Products</div>
       <div
         v-for="(product, sn) in store.treeData.products"
         :key="sn"
@@ -229,4 +248,7 @@ onMounted(() => store.fetchTree())
 .tree-node:hover .btn-inline-del { display: inline-flex; }
 
 .adoc-node { color: #6366f1; font-size: 12px; }
+.theme-node { color: #0891b2; font-size: 12px; }
+.global-node { padding-left: 12px; }
+.tree-section-label { font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 8px 2px; }
 </style>

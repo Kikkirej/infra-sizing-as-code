@@ -80,3 +80,9 @@ class UnitsNode(BaseModel):
 class EditorState(BaseModel):
     products: dict[str, ProductNode] = {}
     units: UnitsNode = Field(default_factory=UnitsNode)
+    global_preamble_content: str = ""
+    global_preamble_change: ChangeState = ChangeState.CLEAN
+    global_suffix_content: str = ""
+    global_suffix_change: ChangeState = ChangeState.CLEAN
+    theme_content: str = ""
+    theme_change: ChangeState = ChangeState.CLEAN

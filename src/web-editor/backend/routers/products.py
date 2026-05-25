@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 
 router = APIRouter()
-REPO_ROOT = Path(os.environ.get("REPO_ROOT", Path(__file__).parents[5]))
+REPO_ROOT = Path(os.environ.get("REPO_ROOT", "."))
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────

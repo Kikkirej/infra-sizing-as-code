@@ -6,11 +6,16 @@ services:
       - "8000:8000"
     volumes:
       - ./infra:/repo/infra
-      - ./.git:/repo/.git:ro
+      - ./theme.yml:/repo/theme.yml
+      - ./.git:/repo/.git
       - ${SSH_AUTH_SOCK}:/ssh-agent
+      - ./src/web-editor/backend:/app
     environment:
       - SSH_AUTH_SOCK=/ssh-agent
       - REPO_ROOT=/repo
+      - GIT_CONFIG_COUNT=1
+      - GIT_CONFIG_KEY_0=safe.directory
+      - GIT_CONFIG_VALUE_0=/repo
     restart: unless-stopped
 
   frontend:
@@ -18,6 +23,9 @@ services:
       context: ./src/web-editor/frontend
     ports:
       - "5173:5173"
+    volumes:
+      - ./src/web-editor/frontend/src:/app/src
+      - ./src/web-editor/frontend/index.html:/app/index.html
     depends_on:
       - backend
     restart: unless-stopped

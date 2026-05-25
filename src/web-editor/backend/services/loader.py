@@ -131,4 +131,17 @@ def load_infra(repo_root: Path) -> EditorState:
     else:
         units = UnitsNode(units=list(DEFAULT_UNITS), change=ChangeState.ADDED)
 
-    return EditorState(products=products, units=units)
+    global_preamble = infra_dir / "preamble.adoc"
+    global_suffix = infra_dir / "suffix.adoc"
+    theme_file = repo_root / "theme.yml"
+
+    return EditorState(
+        products=products,
+        units=units,
+        global_preamble_content=global_preamble.read_text() if global_preamble.exists() else "",
+        global_preamble_change=ChangeState.CLEAN if global_preamble.exists() else ChangeState.ADDED,
+        global_suffix_content=global_suffix.read_text() if global_suffix.exists() else "",
+        global_suffix_change=ChangeState.CLEAN if global_suffix.exists() else ChangeState.ADDED,
+        theme_content=theme_file.read_text() if theme_file.exists() else "",
+        theme_change=ChangeState.CLEAN if theme_file.exists() else ChangeState.ADDED,
+    )

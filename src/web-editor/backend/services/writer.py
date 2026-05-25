@@ -141,6 +141,12 @@ def write_all(state: EditorState, repo_root: Path) -> None:
 
     if state.units.change != ChangeState.CLEAN:
         atomic_write_json(infra / "units.json", state.units.units)
+    if state.global_preamble_change != ChangeState.CLEAN:
+        atomic_write_text(infra / "preamble.adoc", state.global_preamble_content)
+    if state.global_suffix_change != ChangeState.CLEAN:
+        atomic_write_text(infra / "suffix.adoc", state.global_suffix_content)
+    if state.theme_change != ChangeState.CLEAN:
+        atomic_write_text(repo_root / "theme.yml", state.theme_content)
 
     for d in sorted(dirs_to_delete, key=lambda p: len(p.parts), reverse=True):
         if d.exists():

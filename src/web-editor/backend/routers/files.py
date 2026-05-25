@@ -8,7 +8,7 @@ from services import state_store
 from services.writer import atomic_write_text
 
 router = APIRouter()
-REPO_ROOT = Path(os.environ.get("REPO_ROOT", Path(__file__).parents[5]))
+REPO_ROOT = Path(os.environ.get("REPO_ROOT", "."))
 
 ALLOWED_TYPES = {"image/png", "image/svg+xml"}
 ALLOWED_EXTENSIONS = {".png", ".svg", ".mmd"}

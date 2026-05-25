@@ -59,7 +59,14 @@ def get_tree():
             "preamble_change": p.preamble_change, "suffix_change": p.suffix_change,
             "sizes": sizes_out,
         }
-    return {"products": products_out}
+    return {
+        "globals": {
+            "preamble_change": state.global_preamble_change,
+            "suffix_change": state.global_suffix_change,
+            "theme_change": state.theme_change,
+        },
+        "products": products_out,
+    }
 
 
 @router.get("/overview")
