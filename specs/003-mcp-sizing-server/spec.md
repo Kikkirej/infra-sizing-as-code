@@ -20,8 +20,8 @@ A developer using Cursor (or any MCP-compatible AI assistant) wants to retrieve 
 
 **Acceptance Scenarios**:
 
-1. **Given** the MCP server is running and a product/size combination exists, **When** a client requests sizing data for that combination, **Then** the server returns the complete component specifications for that tier.
-2. **Given** a client requests data for a non-existent product or size, **When** the server processes the request, **Then** the server returns a clear error indicating the product or size was not found.
+1. **Given** the MCP server is running and a product/size/flavour combination exists, **When** a client requests the flavour specification, **Then** the server returns the complete flavour specification for that tier.
+2. **Given** a client requests data using a non-existent product, size, or flavour, **When** the server processes the request, **Then** the server returns a clear error indicating which level of the hierarchy was not found.
 3. **Given** the MCP server is running, **When** a client asks for available products, **Then** the server returns the full list of registered products with their display names.
 
 ---
@@ -32,13 +32,14 @@ A developer wants to know which products and sizing tiers are available in the r
 
 **Why this priority**: Discovery is essential before querying details; without it, users would need to know product names and sizes in advance, greatly limiting the assistant's usefulness.
 
-**Independent Test**: Can be fully tested by invoking the list-products and list-sizes tools and verifying the response matches the current `products.json` and per-product `sizes.json` files.
+**Independent Test**: Can be fully tested by invoking the list-products, list-sizes, and list-flavours tools and verifying responses match the current `products.json`, per-product `sizes.json`, and per-size `flavours.json` files.
 
 **Acceptance Scenarios**:
 
 1. **Given** the MCP server is running, **When** a client requests all available products, **Then** the server returns a list of all products with their short names and display names.
 2. **Given** a valid product short name, **When** a client requests available sizes for that product, **Then** the server returns all size tiers defined for that product.
-3. **Given** an invalid product short name, **When** a client requests sizes for it, **Then** the server returns an appropriate not-found response.
+3. **Given** a valid product and size, **When** a client requests available flavours for that combination, **Then** the server returns all flavours defined for that size.
+4. **Given** an invalid product, size, or flavour, **When** a client requests discovery at that level, **Then** the server returns a level-specific not-found response.
 
 ---
 
@@ -60,10 +61,10 @@ A new team member wants to set up Cursor to use the MCP server so their AI assis
 
 ### Edge Cases
 
-- What happens when the `infra/` directory is missing or empty at server startup?
-- How does the server behave when a `sizes.json` file references a size directory that does not exist on disk?
-- What happens when the server is queried while the underlying data files are being edited?
-- How does the server handle requests for component-level detail when no component JSON files are present in a size directory?
+- **Missing `infra/` at startup**: The backend fails to start with a clear diagnostic error (see FR-010).
+- **`sizes.json` references a missing directory**: Treated as a not-found response for that size — same level-specific error as FR-005.
+- **Infra files being edited during a query**: Reads whatever is on disk at query time; partial reads are possible but acceptable for v1 local use.
+- **Flavour directory present but contains no spec files**: Returns an empty flavour specification; no error raised.
 
 ## Requirements *(mandatory)*
 
@@ -71,20 +72,23 @@ A new team member wants to set up Cursor to use the MCP server so their AI assis
 
 - **FR-001**: The server MUST expose a tool to list all available products from the infrastructure repository.
 - **FR-002**: The server MUST expose a tool to list all available size tiers for a given product.
-- **FR-003**: The server MUST expose a tool to retrieve the full sizing specification for a given product and size tier, including all component details.
+- **FR-003**: The server MUST expose a tool to list all flavours (component groups) available within a given product/size combination.
+- **FR-003a**: The server MUST expose a tool to retrieve the full hardware specification for a specific flavour within a given product and size tier, including all component details (CPU, RAM, disk, network, software).
 - **FR-004**: The server MUST return structured, machine-readable responses suitable for AI assistant consumption.
-- **FR-005**: The server MUST return meaningful error messages when a requested product or size does not exist.
-- **FR-006**: The server MUST read sizing data from the existing `infra/` directory structure without requiring data migration or duplication.
-- **FR-007**: The server MUST be integrated into the existing backend component of the web editor.
-- **FR-008**: The documentation MUST describe how to add the MCP server as a tool source in Cursor, including connection URL/configuration, and a verification step confirming the connection works.
+- **FR-005**: The server MUST return a meaningful, level-specific error message when a requested product, size, or flavour does not exist (e.g., "Product 'X' not found", "Size 'Y' not found for product 'X'", "Flavour 'Z' not found for product 'X' size 'Y'").
+- **FR-006**: The server MUST read sizing data from the existing `infra/` directory structure on every request — no in-memory caching — so that changes to infra files are reflected immediately without a server restart.
+- **FR-007**: The MCP endpoint MUST be mounted into the existing web editor backend process — no separate process or port management is required; the endpoint becomes available automatically when the backend starts.
+- **FR-007a**: The MCP server MUST communicate via HTTP/SSE transport, exposing a URL endpoint (e.g., `http://localhost:<PORT>/mcp`) that clients connect to over the network.
+- **FR-008**: The documentation MUST be placed at `docs/mcp-server/` and MUST describe how to add the MCP server as a tool source in Cursor by providing the HTTP/SSE endpoint URL in Cursor's MCP settings, including a verification step confirming the connection works.
 - **FR-009**: The documentation MUST include a troubleshooting section covering the most common connection and configuration issues.
+- **FR-010**: The backend MUST validate that the `infra/` directory exists and contains at least one product at startup; if the check fails, the backend MUST refuse to start and output a clear diagnostic message identifying the missing or misconfigured path.
 
 ### Key Entities
 
 - **Product**: A software product available for sizing (e.g., "ACME CRM Platform"), identified by a short name and human-readable display name.
 - **Size Tier**: A deployment scale for a product (e.g., "Small – 100 Users"), identified by a short name within its product.
-- **Component Group**: A category of infrastructure components within a size tier (e.g., "Application Servers", "Database Servers").
-- **Sizing Specification**: The aggregate of all component groups and their configurations for a specific product/size combination.
+- **Flavour**: A category of infrastructure components within a size tier (e.g., "Application Servers", "Database Servers"). This is the canonical term used in the repository (`flavours.json`).
+- **Flavour Specification**: The full hardware configuration for a specific flavour — including server count, CPU, RAM, disk layout, network, and software stack.
 
 ## Success Criteria *(mandatory)*
 
@@ -94,6 +98,21 @@ A new team member wants to set up Cursor to use the MCP server so their AI assis
 - **SC-002**: All products and sizes defined in the repository are discoverable through the MCP server without any manual configuration.
 - **SC-003**: A developer with no prior knowledge of the project can connect Cursor to the MCP server and make a successful query by following the documentation alone, in under 10 minutes.
 - **SC-004**: The MCP server returns a clear, actionable error message for 100% of invalid product or size requests.
+
+## Clarifications
+
+### Session 2026-05-26 (second run)
+
+- Q: Should error handling cover invalid flavour requests, not just product/size? → A: Yes — all four tools return level-specific not-found errors (product, size, and flavour).
+- Q: What should happen if `infra/` is missing or empty at startup? → A: Fail fast — server refuses to start and prints a clear diagnostic error.
+
+### Session 2026-05-26
+
+- Q: What MCP transport should the server use? → A: HTTP / SSE — server runs as a persistent HTTP service; Cursor connects via URL.
+- Q: How should the MCP server be integrated into the backend? → A: Same process — the MCP endpoint is mounted into the existing web editor backend (one process, automatically available when the backend starts).
+- Q: What tool granularity should the MCP server expose? → A: Four tools with a clear hierarchy: (1) list all products, (2) list sizes for a product, (3) list flavours for a size, (4) get full spec for a flavour.
+- Q: Should the server pick up infra file changes without a restart? → A: Yes — files are read fresh on every request; changes take effect immediately with no restart needed.
+- Q: Where should the Cursor integration documentation live? → A: `docs/mcp-server/` — a new subdirectory following the existing `docs/` pattern.
 
 ## Assumptions
 
