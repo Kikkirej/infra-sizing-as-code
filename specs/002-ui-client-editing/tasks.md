@@ -28,7 +28,7 @@
 **Purpose**: Project scaffolding, Docker wiring, and basic skeleton for both services.
 
 - [X] T001 Create directory tree: `src/web-editor/backend/{models,routers,services}/` and `src/web-editor/frontend/src/{api,stores,components/edit,views}/`
-- [X] T002 Write `src/web-editor/backend/requirements.txt` (fastapi, uvicorn, gitpython, python-multipart)
+- [X] T002 Write `src/web-editor/backend/requirements.txt` (fastapi, uvicorn, gitpython, python-multipart, pytest, httpx)
 - [X] T003 [P] Write `src/web-editor/frontend/package.json` with Vue 3.4, Vite 5, Pinia 2, Asciidoctor.js 3, Axios
 - [X] T004 [P] Write `src/web-editor/backend/Dockerfile` (python:3.11-slim, install requirements, expose 8000, CMD uvicorn)
 - [X] T005 [P] Write `src/web-editor/frontend/Dockerfile` (node:20-alpine, npm install, expose 5173, CMD vite --host)
@@ -71,12 +71,12 @@
 - [X] T022 [P] [US1] Implement `GET /api/tree` in `src/web-editor/backend/routers/tree.py`: serialize `EditorState` to nested tree response with `change` field on each node; include `error` field for ERROR nodes
 - [X] T023 [P] [US1] Implement `GET /api/products/{shortname}` in `src/web-editor/backend/routers/products.py`: return full `ProductNode` with all nested data and field values
 - [X] T024 [P] [US1] Implement `PUT /api/products/{shortname}` in `src/web-editor/backend/routers/products.py`: update display_name in state_store, mark node MODIFIED
-- [X] T025 [P] [US1] Implement `GET` and `PUT` for sizes in `src/web-editor/backend/routers/products.py`: `GET /api/products/{p}/sizes/{s}` returns full SizeNode; `PUT` updates display_name, prefix_text, suffix_text
+- [X] T025 [P] [US1] Implement `GET` and `PUT` for sizes in `src/web-editor/backend/routers/products.py`: `GET /api/products/{p}/sizes/{s}` returns full SizeNode; `PUT` updates display_name only (prefix/suffix stored as `.adoc` files, edited via T060–T061 adoc router)
 - [X] T026 [P] [US1] Implement `GET` and `PUT` for flavours in `src/web-editor/backend/routers/products.py`: `GET /api/products/{p}/sizes/{s}/flavours/{f}`; `PUT` updates display_name and image ref
 - [X] T027 [P] [US1] Implement `GET` and `PUT` for servers in `src/web-editor/backend/routers/products.py`: `GET /api/products/{p}/sizes/{s}/flavours/{f}/servers`; `PUT /...servers/{index}` replaces ServerNode, marks MODIFIED
 - [X] T028 [US1] Write `src/web-editor/frontend/src/components/TreePanel.vue`: recursive tree rendering (product → size → flavour → server), blue dot indicator for MODIFIED/ADDED nodes, strikethrough + red for DELETED nodes, click handler calls `store.selectNode`
 - [X] T029 [P] [US1] Write `src/web-editor/frontend/src/components/edit/ProductEdit.vue`: shortname (readonly), display_name (editable text input); on blur/change call `PUT /api/products/{shortname}` and update store
-- [X] T030 [P] [US1] Write `src/web-editor/frontend/src/components/edit/SizeEdit.vue`: shortname (readonly), display_name, prefix_text, suffix_text inputs; on change call `PUT /api/.../sizes/{shortname}`
+- [X] T030 [P] [US1] Write `src/web-editor/frontend/src/components/edit/SizeEdit.vue`: shortname (readonly), display_name input; on change call `PUT /api/.../sizes/{shortname}` (prefix/suffix content is editable via AdocEditor when size prefix/suffix nodes are selected in the tree)
 - [X] T031 [P] [US1] Write `src/web-editor/frontend/src/components/edit/FlavourEdit.vue`: shortname (readonly), display_name; image ref display (type + value, read-only here — upload handled in US5)
 - [X] T032 [P] [US1] Write `src/web-editor/frontend/src/components/edit/TypedValueInput.vue`: toggle static/dynamic mode, value (number) or formula (text) input, unit `<select>` populated from `units` store
 - [X] T033 [P] [US1] Write `src/web-editor/frontend/src/components/edit/ServerEdit.vue`: system name, count, cpu (TypedValueInput), cpu_clocking, memory (TypedValueInput), disk partition list (each with TypedValueInput + performance + comment), network[] and software[] as tag-style lists, comment
@@ -118,7 +118,7 @@
 - [X] T043 [US7] Implement `POST /api/git/commit` in `src/web-editor/backend/routers/git.py`: validate commit gates (detached HEAD → 409, invalid TypedValues → 422, empty system/no partitions → 422), call `writer.write_all`, then `git_service.commit_and_push`; on push failure return `push_failed: true` with `commit_sha`
 - [X] T044 [US7] Implement `POST /api/git/push` in `src/web-editor/backend/routers/git.py`: call `git_service.retry_push`
 - [X] T045 [US7] Implement `POST /api/products/{shortname}/reset` in `src/web-editor/backend/routers/products.py`: call `loader.load_product(repo_root, shortname)` → replace ProductNode in state_store, all other products unaffected
-- [X] T046 [US7] Write `src/web-editor/frontend/src/components/CommitPanel.vue`: change list (flat names from GET /api/git/changes), commit message `<textarea>`, Commit & Push button (disabled when no changes or detached HEAD), Retry Push button (shown when last commit response had `push_failed: true`), error/success banners
+- [X] T046 [US7] Write `src/web-editor/frontend/src/components/CommitPanel.vue`: change list (flat names from GET /api/git/changes), commit message `<textarea>`, "Commit & Push" button and "Commit Only" button (both disabled when no changes or detached HEAD), Retry Push button (shown when last commit response had `push_failed: true`), error/success banners
 - [X] T047 [US7] Wire CommitPanel as drawer in `App.vue`: Commit button in top nav opens drawer; on successful commit refresh tree store; detect detached HEAD via GET /api/git/status on open
 - [X] T048 [US7] Add Reset Product button to `ProductEdit.vue` header: calls `POST /api/products/{shortname}/reset` → refreshes tree store; button disabled for ADDED products (nothing on disk to reset to)
 

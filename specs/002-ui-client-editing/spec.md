@@ -14,7 +14,7 @@
 
 - Q: Where is the units registry stored and persisted? → A: `infra/units.json` in the repository; committed alongside infrastructure data via the normal commit flow.
 - Q: When the user navigates to a different tree node while the current node has edits, what happens? → A: Changes are automatically applied to the in-memory state; no prompt is shown.
-- Q: Does the commit action also push to the remote, or is push separate? → A: Commit and push happen in a single action; the UI shows a combined "Commit & Push" operation.
+- Q: Does the commit action also push to the remote, or is push separate? → A: The UI provides two buttons: "Commit & Push" (commit then push in one action) and "Commit Only" (commit locally without pushing). Both share the same commit message field.
 - Q: When a copied entity's shortname conflicts with an existing sibling, what happens? → A: The editor auto-appends `-copy` to the shortname; the user can rename it in the edit panel afterwards.
 - Q: What tech stack should the web editor use? → A: Python (FastAPI) backend + Vue.js frontend.
 - Q: How should the editor handle a malformed `servers.json` at load time? → A: Show a scoped error banner for that product in the tree; all other products remain editable normally.
@@ -222,7 +222,7 @@ confirm only the second product's files are written and the commit appears in `g
 - **FR-006**: Users MUST be able to edit all server fields: system name, count, CPU (TypedValue), CPU clocking, memory (TypedValue), disk partitions, network items, software items, and comment.
 - **FR-007**: The editor MUST support both static TypedValues (numeric value + unit from registry) and dynamic TypedValues (formula string + unit from registry) for CPU, memory, and disk partition size.
 - **FR-008**: Users MUST be able to edit product metadata: display name. Shortname is set only when creating a new product (ADDED state) and is read-only for existing products (shortname = directory key; renaming is out of scope for v1).
-- **FR-009**: Users MUST be able to edit size metadata: display name, prefix text, and suffix text. Shortname is set only when creating a new size (ADDED state) and is read-only for existing sizes.
+- **FR-009**: Users MUST be able to edit size metadata: display name. Shortname is set only when creating a new size (ADDED state) and is read-only for existing sizes. Size-level prefix and suffix content is stored as standalone `prefix.adoc` / `suffix.adoc` files in the size directory and is editable via the AsciiDoc editor (FR-013) when those nodes are selected in the tree.
 - **FR-010**: Users MUST be able to edit flavour metadata: display name and image reference. Shortname is set only when creating a new flavour (ADDED state) and is read-only for existing flavours.
 - **FR-011**: All edits MUST be held in memory; no file on disk is modified until the user explicitly commits. (Exception: binary file uploads per FR-021 are written to disk immediately as they are not part of the in-memory JSON model.)
 - **FR-011a**: When the user navigates to a different tree node, any edits on the current node are automatically applied to the in-memory state without prompting.
@@ -263,7 +263,7 @@ confirm only the second product's files are written and the commit appears in `g
 
 **Commit and Reset**
 
-- **FR-027**: Users MUST be able to commit and push all in-memory changes in a single action with a custom message; the action writes all modified files to disk, creates a git commit, and pushes to the configured remote.
+- **FR-027**: Users MUST be able to commit all in-memory changes with a custom message. Two commit actions are available: "Commit & Push" (writes files, creates a git commit, and pushes to the remote) and "Commit Only" (writes files and creates a git commit without pushing). Both actions are available from the commit panel.
 - **FR-027a**: Before the commit is executed, the commit panel MUST display a flat list of the names of all changed entities/files; no diff details or change-type breakdown (added/modified/deleted) is shown.
 - **FR-028**: The commit-and-push operation MUST use the host SSH agent forwarded into the container via Docker Compose.
 - **FR-028a**: If no remote is configured, the action MUST commit locally and inform the user that push was skipped.
@@ -278,7 +278,7 @@ confirm only the second product's files are written and the commit appears in `g
 ### Key Entities
 
 - **Product**: shortname (directory key), display name; references sizes registry.
-- **Size**: shortname, display name, optional prefix/suffix text; belongs to a product.
+- **Size**: shortname, display name, optional prefix/suffix `.adoc` files (stored as `prefix.adoc` / `suffix.adoc` in the size directory); belongs to a product.
 - **Flavour**: shortname, display name; belongs to a size; has optional image (file or mermaid) and prefix/suffix adoc files.
 - **Server**: system name, count, CPU (TypedValue), CPU clocking, memory (TypedValue), disk partitions, network items, software items, comment.
 - **Partition**: size (TypedValue), performance, comment/usage.

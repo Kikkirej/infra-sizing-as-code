@@ -207,7 +207,8 @@ def test_load_product_error_isolation(tmp_path):
     ))
     size_dir = tmp_path / "infra" / "good-product" / "size-s"
     size_dir.mkdir()
-    (size_dir / "meta.json").write_text(json.dumps({"prefix_text": "", "suffix_text": ""}))
+    (size_dir / "prefix.adoc").write_text("")
+    (size_dir / "suffix.adoc").write_text("")
     (size_dir / "flavours.json").write_text(json.dumps(
         [{"shortname": "flavour-f", "display_name": "F"}]
     ))

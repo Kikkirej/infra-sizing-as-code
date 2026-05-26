@@ -144,10 +144,11 @@ def load_product_meta(product_dir: Path) -> dict:
 
 
 def load_size_meta(size_dir: Path) -> dict:
-    meta = json.loads((size_dir / "meta.json").read_text())
+    prefix_path = size_dir / "prefix.adoc"
+    suffix_path = size_dir / "suffix.adoc"
     return {
-        "prefix_text": meta.get("prefix_text") or "",
-        "suffix_text": meta.get("suffix_text") or "",
+        "prefix_text": prefix_path.read_text() if prefix_path.exists() else "",
+        "suffix_text": suffix_path.read_text() if suffix_path.exists() else "",
     }
 
 
