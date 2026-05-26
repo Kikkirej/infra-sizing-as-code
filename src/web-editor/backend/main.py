@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from services import state_store
-from routers import tree, products, adoc, files, units, git as git_router
+from routers import tree, products, adoc, files, units, git as git_router, versioning as versioning_router
 from mcp_server.server import mcp
 
 
@@ -38,4 +38,5 @@ app.include_router(adoc.router, prefix="/api")
 app.include_router(files.router, prefix="/api")
 app.include_router(units.router, prefix="/api")
 app.include_router(git_router.router, prefix="/api")
+app.include_router(versioning_router.router, prefix="/api")
 app.mount("/mcp", mcp.sse_app(mount_path="/mcp"))

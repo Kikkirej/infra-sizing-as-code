@@ -3,6 +3,8 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from src.versioning import VersionFileData, VersionEntryData
+
 
 @dataclass
 class TypedValue:
@@ -88,6 +90,7 @@ class Product:
     sizes: list[Size]
     prefix_path: str = ""
     suffix_path: str = ""
+    version_file: VersionFileData | None = None
 
 
 def check_theme(repo_root: Path) -> None:
@@ -302,10 +305,32 @@ def load_product(repo_root: Path, shortname: str, display_name: str) -> Product 
         print(f"ERROR [{shortname}]: no valid sizes", file=sys.stderr)
         return None
 
+    version_file = _load_version_file(product_dir / "versioning" / "wip.json")
+
     return Product(
         shortname=shortname,
         display_name=display_name,
         sizes=sizes,
         prefix_path=prefix_path,
         suffix_path=suffix_path,
+        version_file=version_file,
     )
+
+
+def _load_version_file(path: Path) -> VersionFileData | None:
+    if not path.exists():
+        return None
+    try:
+        raw = json.loads(path.read_text())
+        entries = [
+            VersionEntryData(
+                author=e.get("author", ""),
+                date=e.get("date", ""),
+                notes=e.get("notes"),
+            )
+            for e in raw.get("entries", [])
+        ]
+        return VersionFileData(version_name=raw.get("version_name", ""), entries=entries)
+    except Exception as exc:
+        print(f"WARNING: could not load versioning file {path}: {exc}", file=sys.stderr)
+        return None

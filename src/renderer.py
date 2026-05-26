@@ -2,6 +2,7 @@ from datetime import date
 from pathlib import Path
 
 from src.loader import Flavour, FlavourImage, Partition, Product, Server, Size
+from src.versioning import VersionFileData
 
 
 def render_document_header(product: Product) -> str:
@@ -121,6 +122,20 @@ def render_size_section(
     return "\n".join(parts)
 
 
+def render_version_table(version_file: VersionFileData) -> str:
+    lines = [
+        "== Version History\n",
+        '[cols="15,15,30,40",options="header"]',
+        "|===",
+        "| Version | Date | Author(s) | Notes",
+    ]
+    for entry in version_file.entries:
+        notes_cell = entry.notes or ""
+        lines.append(f"| {version_file.version_name} | {entry.date} | {entry.author} | {notes_cell}")
+    lines.append("|===")
+    return "\n".join(lines) + "\n"
+
+
 def render_product_document(product: Product, build_date: str = "") -> str:
     parts = [render_document_header(product)]
 
@@ -133,5 +148,8 @@ def render_product_document(product: Product, build_date: str = "") -> str:
 
     parts.append(f"include::{product.suffix_path}[]\n")
     parts.append("include::infra/suffix.adoc[]\n")
+
+    if product.version_file is not None:
+        parts.append(render_version_table(product.version_file))
 
     return "\n".join(parts)

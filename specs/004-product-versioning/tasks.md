@@ -27,7 +27,7 @@
 
 **⚠️ CRITICAL**: No user story backend work can begin until this phase is complete.
 
-- [ ] T001 Create `src/web-editor/backend/models/versioning.py` with `VersionEntry` (author, date, notes fields), `VersionFile` (version_name, entries fields), and `VersionNoteIn` (product_shortname, author, date, notes fields) Pydantic models; add `field_validator` for `version_name` (`^[A-Za-z0-9._-]+$`) and `author` (per-token regex `^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ' -]*, [A-Za-zÀ-ÿ][A-Za-zÀ-ÿ' -]*$`, semicolon-split, error lists all invalid tokens per FR-020)
+- [x] T001 Create `src/web-editor/backend/models/versioning.py` with `VersionEntry` (author, date, notes fields), `VersionFile` (version_name, entries fields), and `VersionNoteIn` (product_shortname, author, date, notes fields) Pydantic models; add `field_validator` for `version_name` (`^[A-Za-z0-9._-]+$`) and `author` (per-token regex `^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ' -]*, [A-Za-zÀ-ÿ][A-Za-zÀ-ÿ' -]*$`, semicolon-split, error lists all invalid tokens per FR-020)
 
 **Checkpoint**: Pydantic models ready — all backend endpoint development and the git.py extension can now proceed.
 
@@ -41,18 +41,18 @@
 
 ### Backend — User Story 1
 
-- [ ] T002 [P] [US1] Implement `GET /api/products/{shortname}/versioning` in `src/web-editor/backend/routers/versioning.py` — reads `infra/<shortname>/versioning/` directory; returns `{ wip: bool, versions: [str] }` sorted newest-first; returns `{ wip: false, versions: [] }` if directory absent
-- [ ] T003 [P] [US1] Implement `GET /api/products/{shortname}/versioning/{version}` in `src/web-editor/backend/routers/versioning.py` — `version` is `"wip"` or a released version_name; returns `VersionFile` JSON plus `readonly` flag; returns 422 with reset hint if `wip.json` is malformed (FR-018)
-- [ ] T004 [P] [US1] Implement `POST /api/products/{shortname}/versioning/wip/reset` in `src/web-editor/backend/routers/versioning.py` — writes a fresh `wip.json` with empty version_name and empty entries array; returns the new file content
-- [ ] T005 [US1] Register versioning router in `src/web-editor/backend/main.py` with `prefix="/api"` (alongside existing routers)
-- [ ] T006 [P] [US1] Write tests for US1 backend in `src/web-editor/backend/tests/test_versioning.py` — list versions (product with WIP+released, product with no versioning dir), get WIP, get released version (readonly=true), get missing version (404), get malformed WIP (422), reset malformed WIP (200)
+- [x] T002 [P] [US1] Implement `GET /api/products/{shortname}/versioning` in `src/web-editor/backend/routers/versioning.py` — reads `infra/<shortname>/versioning/` directory; returns `{ wip: bool, versions: [str] }` sorted newest-first; returns `{ wip: false, versions: [] }` if directory absent
+- [x] T003 [P] [US1] Implement `GET /api/products/{shortname}/versioning/{version}` in `src/web-editor/backend/routers/versioning.py` — `version` is `"wip"` or a released version_name; returns `VersionFile` JSON plus `readonly` flag; returns 422 with reset hint if `wip.json` is malformed (FR-018)
+- [x] T004 [P] [US1] Implement `POST /api/products/{shortname}/versioning/wip/reset` in `src/web-editor/backend/routers/versioning.py` — writes a fresh `wip.json` with empty version_name and empty entries array; returns the new file content
+- [x] T005 [US1] Register versioning router in `src/web-editor/backend/main.py` with `prefix="/api"` (alongside existing routers)
+- [x] T006 [P] [US1] Write tests for US1 backend in `src/web-editor/backend/tests/test_versioning.py` — list versions (product with WIP+released, product with no versioning dir), get WIP, get released version (readonly=true), get missing version (404), get malformed WIP (422), reset malformed WIP (200)
 
 ### Frontend — User Story 1
 
-- [ ] T007 [P] [US1] Create `src/web-editor/frontend/src/stores/versioning.js` — Pinia store with state: `versionList` (from GET list), `selectedVersion` (default `"wip"`), `versionData` (from GET version file); actions: `fetchVersionList(productSn)`, `selectVersion(productSn, version)`, `reset()`
-- [ ] T008 [US1] Add "Versions" leaf node (type `'versions'`) inside the per-product `<template v-if="expanded[sn]">` block in `src/web-editor/frontend/src/components/TreePanel.vue` — styled as existing adoc-node; click calls `store.selectNode({ type: 'versions', product: sn })`
-- [ ] T009 [US1] Create `src/web-editor/frontend/src/components/edit/VersioningPanel.vue` — mounts with `productSn` prop; on mount calls `versioningStore.fetchVersionList(productSn)` and `selectVersion('wip')`; renders: version selector `<select>` (WIP + released), `version_name` display field (read-only in this story), entries table with columns Author, Date, Notes; shows empty-state when entries is empty; shows error-state with "Reset to empty WIP" button when malformed WIP is detected (calls reset endpoint then refetches)
-- [ ] T010 [US1] Add `VersioningPanel` import and `v-else-if="node.type === 'versions'"` branch in `src/web-editor/frontend/src/components/MainPanel.vue` passing `:productSn="node.product"`
+- [x] T007 [P] [US1] Create `src/web-editor/frontend/src/stores/versioning.js` — Pinia store with state: `versionList` (from GET list), `selectedVersion` (default `"wip"`), `versionData` (from GET version file); actions: `fetchVersionList(productSn)`, `selectVersion(productSn, version)`, `reset()`
+- [x] T008 [US1] Add "Versions" leaf node (type `'versions'`) inside the per-product `<template v-if="expanded[sn]">` block in `src/web-editor/frontend/src/components/TreePanel.vue` — styled as existing adoc-node; click calls `store.selectNode({ type: 'versions', product: sn })`
+- [x] T009 [US1] Create `src/web-editor/frontend/src/components/edit/VersioningPanel.vue` — mounts with `productSn` prop; on mount calls `versioningStore.fetchVersionList(productSn)` and `selectVersion('wip')`; renders: version selector `<select>` (WIP + released), `version_name` display field (read-only in this story), entries table with columns Author, Date, Notes; shows empty-state when entries is empty; shows error-state with "Reset to empty WIP" button when malformed WIP is detected (calls reset endpoint then refetches)
+- [x] T010 [US1] Add `VersioningPanel` import and `v-else-if="node.type === 'versions'"` branch in `src/web-editor/frontend/src/components/MainPanel.vue` passing `:productSn="node.product"`
 
 **Checkpoint**: User Story 1 is fully functional. Navigate to any product → Versions → see table. Verify against spec acceptance scenarios 1–4 for US1.
 
@@ -66,17 +66,17 @@
 
 ### Backend — User Story 2
 
-- [ ] T011 [P] [US2] Implement `PATCH /api/products/{shortname}/versioning/wip` in `src/web-editor/backend/routers/versioning.py` — accepts `{ version_name: str }`, validates regex, writes updated `wip.json`; returns 422 on invalid format
-- [ ] T012 [P] [US2] Implement `POST /api/products/{shortname}/versioning/wip/entries` in `src/web-editor/backend/routers/versioning.py` — appends VersionEntry to `wip.json` entries array; validates author (all tokens); returns 201 with index + entry; returns 422 with per-token error on invalid author (FR-020)
-- [ ] T013 [P] [US2] Implement `PUT /api/products/{shortname}/versioning/wip/entries/{index}` in `src/web-editor/backend/routers/versioning.py` — replaces entry at index; same author validation; returns 404 on out-of-range index
-- [ ] T014 [P] [US2] Implement `DELETE /api/products/{shortname}/versioning/wip/entries/{index}` in `src/web-editor/backend/routers/versioning.py` — removes entry at index; returns 404 on out-of-range index
-- [ ] T015 [P] [US2] Extend `src/web-editor/backend/tests/test_versioning.py` with US2 test cases — create entry (valid single author, valid multi-author, invalid single, mixed valid/invalid), update entry, delete entry, version_name update (valid, invalid chars), CRUD on released version returns 405
+- [x] T011 [P] [US2] Implement `PATCH /api/products/{shortname}/versioning/wip` in `src/web-editor/backend/routers/versioning.py` — accepts `{ version_name: str }`, validates regex, writes updated `wip.json`; returns 422 on invalid format
+- [x] T012 [P] [US2] Implement `POST /api/products/{shortname}/versioning/wip/entries` in `src/web-editor/backend/routers/versioning.py` — appends VersionEntry to `wip.json` entries array; validates author (all tokens); returns 201 with index + entry; returns 422 with per-token error on invalid author (FR-020)
+- [x] T013 [P] [US2] Implement `PUT /api/products/{shortname}/versioning/wip/entries/{index}` in `src/web-editor/backend/routers/versioning.py` — replaces entry at index; same author validation; returns 404 on out-of-range index
+- [x] T014 [P] [US2] Implement `DELETE /api/products/{shortname}/versioning/wip/entries/{index}` in `src/web-editor/backend/routers/versioning.py` — removes entry at index; returns 404 on out-of-range index
+- [x] T015 [P] [US2] Extend `src/web-editor/backend/tests/test_versioning.py` with US2 test cases — create entry (valid single author, valid multi-author, invalid single, mixed valid/invalid), update entry, delete entry, version_name update (valid, invalid chars), CRUD on released version returns 405
 
 ### Frontend — User Story 2
 
-- [ ] T016 [US2] Extend `src/web-editor/frontend/src/components/edit/VersioningPanel.vue` with CRUD controls (shown only when WIP selected): "Add Entry" button opens inline entry form (author text input, date picker, notes textarea); each row gains Edit and Delete buttons; edit re-opens form pre-filled; save calls POST or PUT endpoint; delete calls DELETE endpoint; all three refresh `versioningStore.selectVersion` after success
-- [ ] T017 [US2] Add reactive author validation to the entry form in `src/web-editor/frontend/src/components/edit/VersioningPanel.vue` — split input on `;\s*`, validate each token against `^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ' -]*, [A-Za-zÀ-ÿ][A-Za-zÀ-ÿ' -]*$`, show per-token error message listing all invalid tokens; disable save button until valid
-- [ ] T018 [US2] Make `version_name` field editable when WIP is selected in `src/web-editor/frontend/src/components/edit/VersioningPanel.vue` — bind to reactive input; validate `^[A-Za-z0-9._-]+$` inline; call `PATCH .../wip` on blur; show validation error without saving when pattern fails
+- [x] T016 [US2] Extend `src/web-editor/frontend/src/components/edit/VersioningPanel.vue` with CRUD controls (shown only when WIP selected): "Add Entry" button opens inline entry form (author text input, date picker, notes textarea); each row gains Edit and Delete buttons; edit re-opens form pre-filled; save calls POST or PUT endpoint; delete calls DELETE endpoint; all three refresh `versioningStore.selectVersion` after success
+- [x] T017 [US2] Add reactive author validation to the entry form in `src/web-editor/frontend/src/components/edit/VersioningPanel.vue` — split input on `;\s*`, validate each token against `^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ' -]*, [A-Za-zÀ-ÿ][A-Za-zÀ-ÿ' -]*$`, show per-token error message listing all invalid tokens; disable save button until valid
+- [x] T018 [US2] Make `version_name` field editable when WIP is selected in `src/web-editor/frontend/src/components/edit/VersioningPanel.vue` — bind to reactive input; validate `^[A-Za-z0-9._-]+$` inline; call `PATCH .../wip` on blur; show validation error without saving when pattern fails
 
 **Checkpoint**: User Story 2 is fully functional. Verify spec acceptance scenarios 1–5 for US2 including multi-author and validation error cases.
 
@@ -90,17 +90,17 @@
 
 ### Backend pre-requisites — User Story 3
 
-- [ ] T019 [P] [US3] Create `src/versioning.py` with plain Python dataclasses `VersionEntryData(author: str, date: str, notes: str | None)` and `VersionFileData(version_name: str, entries: list[VersionEntryData])` — no Pydantic dependency, shared by the CLI build pipeline and web editor; extend `src/loader.py` `Product` dataclass with `version_file: VersionFileData | None = None`; in `_load_product()` read `infra/<shortname>/versioning/wip.json`, parse JSON dict into `VersionFileData`; on missing file set `None`; on parse error log warning and set `None`; the web editor's Pydantic `VersionFile` in `src/web-editor/backend/models/versioning.py` maps to/from `VersionFileData` at the router boundary — no direct import between `src/loader.py` and the backend models
-- [ ] T020 [P] [US3] Extend `src/renderer.py` — add `render_version_table(version_file: VersionFile) -> str` generating a 4-column AsciiDoc table (Version, Date, Author, Notes) from `version_file.entries`; extend `render_product_document()` to append `\n== Version History\n\n{table}` after the global suffix include when `product.version_file is not None`
+- [x] T019 [P] [US3] Create `src/versioning.py` with plain Python dataclasses `VersionEntryData(author: str, date: str, notes: str | None)` and `VersionFileData(version_name: str, entries: list[VersionEntryData])` — no Pydantic dependency, shared by the CLI build pipeline and web editor; extend `src/loader.py` `Product` dataclass with `version_file: VersionFileData | None = None`; in `_load_product()` read `infra/<shortname>/versioning/wip.json`, parse JSON dict into `VersionFileData`; on missing file set `None`; on parse error log warning and set `None`; the web editor's Pydantic `VersionFile` in `src/web-editor/backend/models/versioning.py` maps to/from `VersionFileData` at the router boundary — no direct import between `src/loader.py` and the backend models
+- [x] T020 [P] [US3] Extend `src/renderer.py` — add `render_version_table(version_file: VersionFile) -> str` generating a 4-column AsciiDoc table (Version, Date, Author, Notes) from `version_file.entries`; extend `render_product_document()` to append `\n== Version History\n\n{table}` after the global suffix include when `product.version_file is not None`
 
 ### Release endpoint — User Story 3
 
-- [ ] T021 [US3] Implement `POST /api/products/{shortname}/release` in `src/web-editor/backend/routers/versioning.py` following the 10-step sequence in `plan.md` Implementation Notes: (1) read+validate wip.json; (2) validate version_name regex; (3) check no duplicate file; (4) validate new_version_name; (5) write `<version>.json`; (6) regenerate .adoc via render_product_document with version_file set to released data; (7) attempt PDF build, log warning on failure; (8) write new wip.json with `version_name = new_version_name` and one seeded entry: author and date from `entries[-1]` of the just-released version (entries are ordered newest-last per data-model.md), notes = "copied from previous version" (FR-010); (9) `git add -A` + commit; (10) create git tag; return `{ version_name, tag, commit_sha, pdf_generated, new_wip_version_name }`
-- [ ] T022 [P] [US3] Extend `src/web-editor/backend/tests/test_versioning.py` with release test cases — happy path (file created, tag exists, new wip seeded), empty WIP blocked (FR-017), duplicate version_name blocked (FR-016), invalid version_name rejected (FR-019), invalid new_version_name rejected, malformed wip.json rejected
+- [x] T021 [US3] Implement `POST /api/products/{shortname}/release` in `src/web-editor/backend/routers/versioning.py` following the 10-step sequence in `plan.md` Implementation Notes: (1) read+validate wip.json; (2) validate version_name regex; (3) check no duplicate file; (4) validate new_version_name; (5) write `<version>.json`; (6) regenerate .adoc via render_product_document with version_file set to released data; (7) attempt PDF build, log warning on failure; (8) write new wip.json with `version_name = new_version_name` and one seeded entry: author and date from `entries[-1]` of the just-released version (entries are ordered newest-last per data-model.md), notes = "copied from previous version" (FR-010); (9) `git add -A` + commit; (10) create git tag; return `{ version_name, tag, commit_sha, pdf_generated, new_wip_version_name }`
+- [x] T022 [P] [US3] Extend `src/web-editor/backend/tests/test_versioning.py` with release test cases — happy path (file created, tag exists, new wip seeded), empty WIP blocked (FR-017), duplicate version_name blocked (FR-016), invalid version_name rejected (FR-019), invalid new_version_name rejected, malformed wip.json rejected
 
 ### Frontend — User Story 3
 
-- [ ] T023 [US3] Add "Release" button and release popup to `src/web-editor/frontend/src/components/edit/ProductEdit.vue` — button visible when product is not ADDED; clicking opens a modal with a `new_version_name` text input (validated `^[A-Za-z0-9._-]+$` inline) and Confirm/Cancel; on Confirm calls `POST /api/products/{shortname}/release`; on success shows `version_name`, `tag`, and `pdf_generated` status; on error surfaces detail message; on close refreshes tree and versioning store
+- [x] T023 [US3] Add "Release" button and release popup to `src/web-editor/frontend/src/components/edit/ProductEdit.vue` — button visible when product is not ADDED; clicking opens a modal with a `new_version_name` text input (validated `^[A-Za-z0-9._-]+$` inline) and Confirm/Cancel; on Confirm calls `POST /api/products/{shortname}/release`; on success shows `version_name`, `tag`, and `pdf_generated` status; on error surfaces detail message; on close refreshes tree and versioning store
 
 **Checkpoint**: User Story 3 is fully functional. Verify spec acceptance scenarios 1–4 for US3 including the popup, the seeded wip.json, and the git tag.
 
@@ -114,12 +114,12 @@
 
 ### Backend — User Story 4
 
-- [ ] T024 [US4] Extend `CommitBody` in `src/web-editor/backend/routers/git.py` with `version_notes: list[VersionNoteIn] = []`; before `write_all()` loop over notes: validate each (re-raise as 422 listing index + error on failure), read the product's `wip.json`, append new entry, write back; then proceed with existing `write_all()` + commit flow
-- [ ] T025 [P] [US4] Extend `src/web-editor/backend/tests/test_versioning.py` with commit+version-note test cases — valid note appended to wip.json, invalid author blocks commit (422), note for product with no pending sizing changes is accepted, empty version_notes list has no effect
+- [x] T024 [US4] Extend `CommitBody` in `src/web-editor/backend/routers/git.py` with `version_notes: list[VersionNoteIn] = []`; before `write_all()` loop over notes: validate each (re-raise as 422 listing index + error on failure), read the product's `wip.json`, append new entry, write back; then proceed with existing `write_all()` + commit flow
+- [x] T025 [P] [US4] Extend `src/web-editor/backend/tests/test_versioning.py` with commit+version-note test cases — valid note appended to wip.json, invalid author blocks commit (422), note for product with no pending sizing changes is accepted, empty version_notes list has no effect
 
 ### Frontend — User Story 4
 
-- [ ] T026 [US4] Extend `src/web-editor/frontend/src/components/CommitPanel.vue` — after fetching changes, extract unique product shortnames from the `changes` list using this rule: for each entry take the segment before the first ` / ` separator, or the second path segment of `infra/<shortname>/...` strings (e.g. `"acme-crm / small"` → `"acme-crm"`, `"infra/acme-crm/prefix.adoc"` → `"acme-crm"`); deduplicate; for each unique shortname render a collapsible "Version note for <shortname>" section with author text input (inline validation), date input, notes textarea; on commit, collect non-empty sections into `version_notes` array and include in the `POST /api/git/commit` body; empty sections are excluded (commit proceeds as normal)
+- [x] T026 [US4] Extend `src/web-editor/frontend/src/components/CommitPanel.vue` — after fetching changes, extract unique product shortnames from the `changes` list using this rule: for each entry take the segment before the first ` / ` separator, or the second path segment of `infra/<shortname>/...` strings (e.g. `"acme-crm / small"` → `"acme-crm"`, `"infra/acme-crm/prefix.adoc"` → `"acme-crm"`); deduplicate; for each unique shortname render a collapsible "Version note for <shortname>" section with author text input (inline validation), date input, notes textarea; on commit, collect non-empty sections into `version_notes` array and include in the `POST /api/git/commit` body; empty sections are excluded (commit proceeds as normal)
 
 **Checkpoint**: User Story 4 is fully functional. Verify spec acceptance scenarios 1–4 for US4 including skip, valid note, and invalid author format.
 
@@ -127,8 +127,8 @@
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T027 [P] Create `docs/product-versioning/overview.md` — feature description, release workflow diagram (text), and operational notes for adding first version, releasing, and recovering from malformed wip.json
-- [ ] T028 [P] Create `docs/product-versioning/file-structure.md` — annotated `versioning/` directory layout, full JSON schemas for wip.json and released version files with field descriptions and validation rules
+- [x] T027 [P] Create `docs/product-versioning/overview.md` — feature description, release workflow diagram (text), and operational notes for adding first version, releasing, and recovering from malformed wip.json
+- [x] T028 [P] Create `docs/product-versioning/file-structure.md` — annotated `versioning/` directory layout, full JSON schemas for wip.json and released version files with field descriptions and validation rules
 - [ ] T029 Validate all acceptance scenarios from `specs/004-product-versioning/spec.md` against the running application (US1 ×4, US2 ×5, US3 ×4, US4 ×4) and confirm all edge cases in the Edge Cases section are handled per their specified behaviour
 
 ---
