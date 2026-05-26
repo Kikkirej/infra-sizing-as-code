@@ -26,7 +26,7 @@
         <span class="node-label">theme.yml</span>
       </div>
 
-      <div class="tree-section-label">Products</div>
+      <div class="tree-section-label">Products <button class="btn-add-product" @click="addProduct">+</button></div>
       <div
         v-for="(product, sn) in store.treeData.products"
         :key="sn"
@@ -259,5 +259,7 @@ onMounted(() => store.fetchTree())
 .adoc-node { color: #6366f1; font-size: 12px; }
 .theme-node { color: #0891b2; font-size: 12px; }
 .global-node { padding-left: 12px; }
-.tree-section-label { font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 8px 2px; }
+.tree-section-label { font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 8px 2px; display: flex; align-items: center; justify-content: space-between; }
+.btn-add-product { background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; line-height: 1; padding: 0 2px; }
+.btn-add-product:hover { color: #3b82f6; }
 </style>

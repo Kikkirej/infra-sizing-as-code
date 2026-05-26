@@ -4,6 +4,7 @@ import tempfile
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from services import state_store
 from services.writer import atomic_write_text
 
@@ -55,3 +56,35 @@ async def upload_file(product: str, size: str, flavour: str, file: UploadFile):
 
     rel = f"infra/{product}/{size}/{flavour}/{file.filename}"
     return {"filename": file.filename, "path": rel}
+
+
+def _get_flavour_or_404(product: str, size: str, flavour: str):
+    state = state_store.get_state()
+    p = state.products.get(product)
+    s = p.sizes.get(size) if p else None
+    f = s.flavours.get(flavour) if s else None
+    if not f:
+        raise HTTPException(404, "Flavour not found")
+    return f
+
+
+@router.get("/files/content/{product}/{size}/{flavour}")
+def get_file_content(product: str, size: str, flavour: str):
+    f = _get_flavour_or_404(product, size, flavour)
+    if not f.image_value:
+        raise HTTPException(404, "No image file set")
+    path = REPO_ROOT / "infra" / product / size / flavour / f.image_value
+    if not path.exists():
+        return {"content": "", "filename": f.image_value}
+    return {"content": path.read_text(encoding="utf-8"), "filename": f.image_value}
+
+
+@router.get("/files/image/{product}/{size}/{flavour}")
+def get_image_file(product: str, size: str, flavour: str):
+    f = _get_flavour_or_404(product, size, flavour)
+    if not f.image_value:
+        raise HTTPException(404, "No image file set")
+    path = REPO_ROOT / "infra" / product / size / flavour / f.image_value
+    if not path.exists():
+        raise HTTPException(404, "File not found on disk")
+    return FileResponse(path)
