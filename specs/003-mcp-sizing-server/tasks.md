@@ -24,8 +24,8 @@
 
 **Purpose**: Add new dependency and create the MCP server package skeleton
 
-- [ ] T001 Add `mcp>=1.0.0` to `src/web-editor/backend/requirements.txt`
-- [ ] T002 Create `src/web-editor/backend/mcp_server/__init__.py` (empty)
+- [X] T001 Add `mcp>=1.0.0` to `src/web-editor/backend/requirements.txt`
+- [X] T002 Create `src/web-editor/backend/mcp_server/__init__.py` (empty)
 
 ---
 
@@ -35,8 +35,8 @@
 
 **⚠️ CRITICAL**: No user story tasks can begin until this phase is complete.
 
-- [ ] T003 Implement `src/web-editor/backend/mcp_server/reader.py` with four functions: `read_products(repo_root)`, `read_sizes(repo_root, product)`, `read_flavours(repo_root, product, size)`, `read_flavour_spec(repo_root, product, size, flavour)` — reads from disk on every call (no state_store), raises `ValueError` with level-specific messages per FR-005 and data-model.md
-- [ ] T004 Add `infra/` startup validation to the `lifespan` context manager in `src/web-editor/backend/main.py`: check `REPO_ROOT/infra/products.json` exists and is non-empty before `state_store.load_state()`; raise `RuntimeError` with path in message on failure (FR-010)
+- [X] T003 Implement `src/web-editor/backend/mcp_server/reader.py` with four functions: `read_products(repo_root)`, `read_sizes(repo_root, product)`, `read_flavours(repo_root, product, size)`, `read_flavour_spec(repo_root, product, size, flavour)` — reads from disk on every call (no state_store), raises `ValueError` with level-specific messages per FR-005 and data-model.md
+- [X] T004 Add `infra/` startup validation to the `lifespan` context manager in `src/web-editor/backend/main.py`: check `REPO_ROOT/infra/products.json` exists and is non-empty before `state_store.load_state()`; raise `RuntimeError` with path in message on failure (FR-010)
 
 **Checkpoint**: `reader.py` functions work in isolation and `main.py` fails fast when `infra/` is missing.
 
@@ -48,9 +48,9 @@
 
 **Independent Test**: Invoke `get_flavour_spec("acme-crm", "small", "appserver")` via the MCP server and verify the returned JSON matches `infra/acme-crm/small/appserver/servers.json`. Confirm a not-found error is returned for an invalid flavour name.
 
-- [ ] T005 [US1] Create `src/web-editor/backend/mcp_server/server.py`: instantiate `FastMCP("infra-sizing")`, read `REPO_ROOT` from environment, implement `get_flavour_spec(product, size, flavour)` tool using `reader.read_flavour_spec()` — returns JSON string on success, error string on `ValueError`
-- [ ] T006 [US1] Mount the MCP SSE sub-application in `src/web-editor/backend/main.py`: `app.mount("/mcp", mcp.sse_app())` after existing router registrations; import `mcp` from `mcp_server.server`
-- [ ] T007 [US1] Add `src/web-editor/backend/tests/test_mcp_tools.py`: test `get_flavour_spec` with valid `acme-crm/small/appserver` (verify CPU, memory, count fields), invalid product (verify error message), invalid size (verify error message), invalid flavour (verify error message)
+- [X] T005 [US1] Create `src/web-editor/backend/mcp_server/server.py`: instantiate `FastMCP("infra-sizing")`, read `REPO_ROOT` from environment, implement `get_flavour_spec(product, size, flavour)` tool using `reader.read_flavour_spec()` — returns JSON string on success, error string on `ValueError`
+- [X] T006 [US1] Mount the MCP SSE sub-application in `src/web-editor/backend/main.py`: `app.mount("/mcp", mcp.sse_app())` after existing router registrations; import `mcp` from `mcp_server.server`
+- [X] T007 [US1] Add `src/web-editor/backend/tests/test_mcp_tools.py`: test `get_flavour_spec` with valid `acme-crm/small/appserver` (verify CPU, memory, count fields), invalid product (verify error message), invalid size (verify error message), invalid flavour (verify error message)
 
 **Checkpoint**: `get_flavour_spec` is fully functional. Backend starts, MCP endpoint is reachable at `http://localhost:8000/mcp/sse`, and an AI assistant can retrieve flavour hardware specs.
 
@@ -62,8 +62,8 @@
 
 **Independent Test**: Invoke `list_products()` and verify it returns `acme-crm` and `acme-erp`. Invoke `list_sizes("acme-crm")` and verify `small`, `medium`, `large`. Invoke `list_flavours("acme-crm", "small")` and verify `appserver`, `dbserver`.
 
-- [ ] T008 [US2] Add `list_products()`, `list_sizes(product)`, and `list_flavours(product, size)` tools to `src/web-editor/backend/mcp_server/server.py` using `reader.read_products()`, `reader.read_sizes()`, `reader.read_flavours()` — return JSON string on success, error string on `ValueError`
-- [ ] T009 [US2] Extend `src/web-editor/backend/tests/test_mcp_tools.py`: tests for `list_products` (non-empty result, correct shortnames), `list_sizes` with valid product, `list_sizes` with invalid product (error message), `list_flavours` with valid product/size, `list_flavours` with invalid size (error message)
+- [X] T008 [US2] Add `list_products()`, `list_sizes(product)`, and `list_flavours(product, size)` tools to `src/web-editor/backend/mcp_server/server.py` using `reader.read_products()`, `reader.read_sizes()`, `reader.read_flavours()` — return JSON string on success, error string on `ValueError`
+- [X] T009 [US2] Extend `src/web-editor/backend/tests/test_mcp_tools.py`: tests for `list_products` (non-empty result, correct shortnames), `list_sizes` with valid product, `list_sizes` with invalid product (error message), `list_flavours` with valid product/size, `list_flavours` with invalid size (error message)
 
 **Checkpoint**: All 4 tools work end-to-end. An AI assistant can navigate the full product → size → flavour → spec hierarchy.
 
@@ -75,8 +75,8 @@
 
 **Independent Test**: Follow `docs/mcp-server/cursor-integration.md` from start to finish on a clean Cursor installation. Verify the `infra-sizing` server appears in Cursor MCP settings and that asking "What products are available?" returns a correct answer.
 
-- [ ] T010 [P] [US3] Create `docs/mcp-server/cursor-integration.md` with: (1) Prerequisites — backend running on port 8000, (2) Project-level config via `.cursor/mcp.json` (recommended), (3) Cursor Settings UI alternative, (4) Verification step — ask "What products are available?", (5) Troubleshooting — server not appearing, connection refused, empty results (per FR-008, FR-009)
-- [ ] T011 [P] [US3] Create `.cursor/mcp.json` at repository root with the `infra-sizing` server config pointing to `http://localhost:8000/mcp/sse` so team members get instant Cursor integration on clone
+- [X] T010 [P] [US3] Create `docs/mcp-server/cursor-integration.md` with: (1) Prerequisites — backend running on port 8000, (2) Project-level config via `.cursor/mcp.json` (recommended), (3) Cursor Settings UI alternative, (4) Verification step — ask "What products are available?", (5) Troubleshooting — server not appearing, connection refused, empty results (per FR-008, FR-009)
+- [X] T011 [P] [US3] Create `.cursor/mcp.json` at repository root with the `infra-sizing` server config pointing to `http://localhost:8000/mcp/sse` so team members get instant Cursor integration on clone
 
 **Checkpoint**: A new team member can clone the repo, start the backend, open Cursor, and immediately ask infrastructure sizing questions without any manual configuration.
 
@@ -86,9 +86,9 @@
 
 **Purpose**: End-to-end validation, clean-up, and ensuring constitution compliance.
 
-- [ ] T012 Verify `mcp_server/reader.py` response shapes strip all editor-specific fields (`ChangeState`, `prefix_content`, `suffix_content`, `image_type`, `image_value`) before returning from `read_flavour_spec()` — cross-check against data-model.md FlavourSpec shape
-- [ ] T013 Run the full test suite from `src/web-editor/backend/`: `pytest tests/` — all tests must pass including existing tests and new MCP tests
-- [ ] T014 [P] Validate quickstart.md end-to-end: start backend locally, confirm MCP endpoint responds, confirm all 4 tools return expected data for `acme-crm/small/appserver`
+- [X] T012 Verify `mcp_server/reader.py` response shapes strip all editor-specific fields (`ChangeState`, `prefix_content`, `suffix_content`, `image_type`, `image_value`) before returning from `read_flavour_spec()` — cross-check against data-model.md FlavourSpec shape
+- [X] T013 Run the full test suite from `src/web-editor/backend/`: `pytest tests/` — all tests must pass including existing tests and new MCP tests
+- [X] T014 [P] Validate quickstart.md end-to-end: start backend locally, confirm MCP endpoint responds, confirm all 4 tools return expected data for `acme-crm/small/appserver`
 
 ---
 

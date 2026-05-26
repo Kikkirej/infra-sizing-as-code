@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from services import state_store
 from routers import tree, products, adoc, files, units, git as git_router
+from mcp_server.server import mcp
 
 
 REPO_ROOT = Path(os.environ.get("REPO_ROOT", "."))
@@ -15,6 +16,9 @@ REPO_ROOT = Path(os.environ.get("REPO_ROOT", "."))
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    products_json = REPO_ROOT / "infra" / "products.json"
+    if not products_json.exists() or products_json.stat().st_size == 0:
+        raise RuntimeError(f"infra/products.json not found at {products_json} — check REPO_ROOT")
     state_store.load_state(REPO_ROOT)
     yield
 
@@ -34,3 +38,4 @@ app.include_router(adoc.router, prefix="/api")
 app.include_router(files.router, prefix="/api")
 app.include_router(units.router, prefix="/api")
 app.include_router(git_router.router, prefix="/api")
+app.mount("/mcp", mcp.sse_app(mount_path="/mcp"))
