@@ -31,14 +31,14 @@ This document is the authoritative schema reference for every file the build rea
 
 ```json
 {
-  "preamble": "<relative path to .adoc, required>",
+  "prefix": "<relative path to .adoc, required>",
   "suffix": "<relative path to .adoc, required>"
 }
 ```
 
 | Field | Type | Constraints |
 |-------|------|------------|
-| preamble | string | Non-empty; path relative to product folder; file must exist |
+| prefix | string | Non-empty; path relative to product folder; file must exist |
 | suffix | string | Non-empty; path relative to product folder; file must exist |
 
 ---

@@ -68,7 +68,7 @@ class Flavour:
     display_name: str
     servers: list[Server]
     image: FlavourImage | None = None
-    has_preamble: bool = False
+    has_prefix: bool = False
     has_suffix: bool = False
 
 
@@ -86,7 +86,7 @@ class Product:
     shortname: str
     display_name: str
     sizes: list[Size]
-    preamble_path: str = ""
+    prefix_path: str = ""
     suffix_path: str = ""
 
 
@@ -136,7 +136,7 @@ def load_flavour_registry(size_dir: Path) -> list[dict]:
 
 def load_product_meta(product_dir: Path) -> dict:
     meta = json.loads((product_dir / "meta.json").read_text())
-    for field_name in ("preamble", "suffix"):
+    for field_name in ("prefix", "suffix"):
         path = product_dir / meta[field_name]
         if not path.exists():
             raise FileNotFoundError(f"{field_name} file not found: {path}")
@@ -144,10 +144,11 @@ def load_product_meta(product_dir: Path) -> dict:
 
 
 def load_size_meta(size_dir: Path) -> dict:
-    meta = json.loads((size_dir / "meta.json").read_text())
+    prefix_path = size_dir / "prefix.adoc"
+    suffix_path = size_dir / "suffix.adoc"
     return {
-        "prefix_text": meta.get("prefix_text") or "",
-        "suffix_text": meta.get("suffix_text") or "",
+        "prefix_text": prefix_path.read_text() if prefix_path.exists() else "",
+        "suffix_text": suffix_path.read_text() if suffix_path.exists() else "",
     }
 
 
@@ -213,7 +214,7 @@ def load_product(repo_root: Path, shortname: str, display_name: str) -> Product 
 
     try:
         meta = load_product_meta(product_dir)
-        preamble_path = f"infra/{shortname}/{meta['preamble']}"
+        prefix_path = f"infra/{shortname}/{meta['prefix']}"
         suffix_path = f"infra/{shortname}/{meta['suffix']}"
     except Exception as e:
         print(f"ERROR [{shortname}]: {e}", file=sys.stderr)
@@ -268,7 +269,7 @@ def load_product(repo_root: Path, shortname: str, display_name: str) -> Product 
             if raw_image:
                 image = FlavourImage(type=raw_image["type"], value=raw_image["value"])
 
-            has_preamble = (flavour_dir / "preamble.adoc").exists()
+            has_prefix = (flavour_dir / "prefix.adoc").exists()
             has_suffix = (flavour_dir / "suffix.adoc").exists()
 
             flavours.append(Flavour(
@@ -276,7 +277,7 @@ def load_product(repo_root: Path, shortname: str, display_name: str) -> Product 
                 display_name=fl_entry["display_name"],
                 servers=servers,
                 image=image,
-                has_preamble=has_preamble,
+                has_prefix=has_prefix,
                 has_suffix=has_suffix,
             ))
 
@@ -305,6 +306,6 @@ def load_product(repo_root: Path, shortname: str, display_name: str) -> Product 
         shortname=shortname,
         display_name=display_name,
         sizes=sizes,
-        preamble_path=preamble_path,
+        prefix_path=prefix_path,
         suffix_path=suffix_path,
     )

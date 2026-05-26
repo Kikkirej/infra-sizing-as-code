@@ -56,8 +56,8 @@ content sections.
 mechanism; a single-product build is the degenerate case and is covered by US1.
 
 **Independent Test**: Define two products; trigger build; verify two distinct PDFs
-are produced, each containing the correct product-specific preamble and suffix
-sections while sharing the common preamble and suffix.
+are produced, each containing the correct product-specific prefix and suffix
+sections while sharing the common prefix and suffix.
 
 **Acceptance Scenarios**:
 
@@ -68,12 +68,12 @@ sections while sharing the common preamble and suffix.
 2. **Given** a product PDF,
    **When** inspecting its structure,
    **Then** sections appear in the mandated order:
-   generated deck/TOC → common preamble → product-specific preamble →
+   generated deck/TOC → common prefix → product-specific prefix →
    infrastructure content → product-specific suffix → common suffix.
 
-3. **Given** a change to the common preamble text,
+3. **Given** a change to the common prefix text,
    **When** the build runs,
-   **Then** the updated preamble appears in every product's PDF.
+   **Then** the updated prefix appears in every product's PDF.
 
 ---
 
@@ -107,7 +107,7 @@ archive file is produced containing all generated PDFs.
   hard for that product with a clear validation error; continue processing remaining
   products (FR-008a).
 - **Server with no disk partitions**: A server definition with an empty or absent `disk` list is a validation error. The build MUST fail that product with a clear error and continue processing remaining products (consistent with FR-008a).
-- **Missing product-specific preamble or suffix file**: Fail hard for that product
+- **Missing product-specific prefix or suffix file**: Fail hard for that product
   with a clear error; continue remaining products (FR-008a).
 - **Missing `theme.yml`**: Fail the entire build immediately with a clear error
   before processing any product.
@@ -168,12 +168,12 @@ archive file is produced containing all generated PDFs.
   run MUST still be available.
 - **FR-009**: Each PDF MUST be composed of the following sections in order:
   (1) generated cover page (document title, product name, build date/version) and
-  auto-generated TOC, (2) common preamble, (3) product-specific preamble,
+  auto-generated TOC, (2) common prefix, (3) product-specific prefix,
   (4) all infrastructure content for that product, (5) product-specific suffix,
   (6) common suffix.
-- **FR-010**: Common preamble and common suffix MUST be identical across all
+- **FR-010**: Common prefix and common suffix MUST be identical across all
   product PDFs.
-- **FR-011**: Product-specific preamble and product-specific suffix MUST be unique
+- **FR-011**: Product-specific prefix and product-specific suffix MUST be unique
   per product.
 - **FR-012**: All infrastructure definitions MUST be stored in a hierarchical
   directory tree under version control (no external database). The canonical
@@ -183,13 +183,13 @@ archive file is produced containing all generated PDFs.
   `{s}`, `{f}` are shortnames (no numeric prefix on any folder).
 - **FR-013**: Display names are stored exclusively in registry files (FR-016) and
   MUST NOT be duplicated in `meta.json`. Each `meta.json` at the product level
-  MUST contain the relative paths to the product-specific preamble and suffix
+  MUST contain the relative paths to the product-specific prefix and suffix
   files. Each `meta.json` at the size level MUST contain the prefix text and
   suffix text.
-- **FR-013a**: The common preamble and common suffix MUST be stored as AsciiDoc
-  files directly under `infra/` (`infra/preamble.adoc`, `infra/suffix.adoc`).
-  Product-specific preamble and suffix files MUST also be AsciiDoc (`.adoc`).
-  All preamble/suffix files are included verbatim into the generated AsciiDoc
+- **FR-013a**: The common prefix and common suffix MUST be stored as AsciiDoc
+  files directly under `infra/` (`infra/prefix.adoc`, `infra/suffix.adoc`).
+  Product-specific prefix and suffix files MUST also be AsciiDoc (`.adoc`).
+  All prefix/suffix files are included verbatim into the generated AsciiDoc
   document before PDF conversion. The build MUST locate common files at their
   fixed paths and product-specific files via paths in the product's `meta.json`.
 - **FR-014**: Each flavour MUST be a directory named `{shortname}/` within the
@@ -197,7 +197,7 @@ archive file is produced containing all generated PDFs.
   `meta.json` (optional image entry only; display name is in the parent
   `flavours.json`) and a `servers.json` (server definitions). Display order is
   controlled by `flavours.json`, not by directory naming.
-- **FR-017**: Each flavour directory MAY contain an optional `preamble.adoc` and
+- **FR-017**: Each flavour directory MAY contain an optional `prefix.adoc` and
   an optional `suffix.adoc` (AsciiDoc). When present, these are included in the
   PDF before and after the flavour's server table respectively.
 - **FR-018**: A flavour's `meta.json` MAY include an optional image entry with a
@@ -221,7 +221,7 @@ archive file is produced containing all generated PDFs.
   `disk` list is absent or empty, the build MUST fail that product with a clear
   validation error and continue processing remaining products (consistent with
   FR-008a).
-- **FR-015a**: If a product-specific preamble or suffix file path is listed in a
+- **FR-015a**: If a product-specific prefix or suffix file path is listed in a
   product's `meta.json` but the file does not exist on disk, the build MUST fail
   that product with a clear error and continue processing remaining products
   (consistent with FR-008a).
@@ -249,7 +249,7 @@ archive file is produced containing all generated PDFs.
 - **Product**: Top-level grouping that maps to one output PDF. Has a **shortname**
   (folder name under `infra/`) and a **display name** (stored exclusively in
   `infra/products.json`). The product folder contains a `meta.json` (holding
-  preamble/suffix file paths only) and one sub-directory per size.
+  prefix/suffix file paths only) and one sub-directory per size.
 - **Size**: A named tier within a product (e.g., "50 users", "500 users"). Has a
   **shortname** (folder name) and a **display name** (stored exclusively in the
   parent product's `sizes.json`). Its `meta.json` contains only the prefix text
@@ -258,7 +258,7 @@ archive file is produced containing all generated PDFs.
   `{shortname}/` (no numeric prefix). Has a **shortname** (directory name) and a
   **display name** (stored exclusively in the parent size's `flavours.json`).
   Display order is controlled by the parent size's `flavours.json`. Contains
-  `meta.json` (optional image entry only), optional `preamble.adoc`, optional
+  `meta.json` (optional image entry only), optional `prefix.adoc`, optional
   `suffix.adoc`, and `servers.json`. May include an optional image entry (type
   `file` or `mermaid`) in `meta.json`.
 - **Server**: A concrete hardware specification rendered as a row in an AsciiDoc
@@ -271,10 +271,10 @@ archive file is produced containing all generated PDFs.
   fields: **size** (storage capacity, e.g. "500 GB"), **performance** (free-text
   storage tier, e.g. "NVMe SSD", "7200 RPM HDD"), and **comment** (optional
   free-text label or description).
-- **Common Preamble / Common Suffix**: Shared document sections applied to every
-  product PDF unchanged; stored as `infra/preamble.adoc` and `infra/suffix.adoc`.
-- **Product Preamble / Product Suffix**: Per-product document sections stored
-  within the product folder (e.g., `infra/{shortname}/preamble.adoc`); paths
+- **Common Prefix / Common Suffix**: Shared document sections applied to every
+  product PDF unchanged; stored as `infra/prefix.adoc` and `infra/suffix.adoc`.
+- **Product Prefix / Product Suffix**: Per-product document sections stored
+  within the product folder (e.g., `infra/{shortname}/prefix.adoc`); paths
   referenced from the product's `meta.json`.
 - **Flavour Image**: An optional entry in a flavour's `meta.json` specifying a
   diagram or image to render in the PDF. Has a `type` (`file` — relative path to
@@ -328,11 +328,11 @@ archive file is produced containing all generated PDFs.
 - Q: How are all products registered / discovered by the build? → A: A top-level `infra/products.json` file lists all products with their shortname and display name. The build uses this as its authoritative product registry.
 - Q: What fields does a disk partition contain? → A: Size and comment. No mount point or filesystem type.
 - Q: What format are CPU and memory server fields? → A: Free-text strings for both (e.g., CPU: "4 vCPU", Memory: "32 GB"). No enforced structure.
-- Q: Where do preamble and suffix content files live in the repository? → A: Under `infra/` — common preamble/suffix at the `infra/` root; product-specific preamble/suffix alongside the product folder (path referenced from `meta.json`).
+- Q: Where do prefix and suffix content files live in the repository? → A: Under `infra/` — common prefix/suffix at the `infra/` root; product-specific prefix/suffix alongside the product folder (path referenced from `meta.json`).
 - Q: Does a server have a name or label? → A: Yes — a free-text display name shown as a label in the PDF.
 - Q: Does a server definition include a quantity? → A: Yes — an integer `count` field (e.g., `count: 3` = "3 servers of this spec"); default is 1.
-- Q: What format are preamble and suffix files? → A: AsciiDoc (`.adoc`) — included directly into the generated AsciiDoc document before PDF conversion.
-- Q: Does a flavour follow the same folder hierarchy pattern as products and sizes? → A: Yes — each flavour is a folder (`NNN-{shortname}/`) containing `meta.json`, optional `preamble.adoc`, optional `suffix.adoc`, and `servers.json` for server definitions.
+- Q: What format are prefix and suffix files? → A: AsciiDoc (`.adoc`) — included directly into the generated AsciiDoc document before PDF conversion.
+- Q: Does a flavour follow the same folder hierarchy pattern as products and sizes? → A: Yes — each flavour is a folder (`NNN-{shortname}/`) containing `meta.json`, optional `prefix.adoc`, optional `suffix.adoc`, and `servers.json` for server definitions.
 - Q: Does each flavour support an optional diagram or image? → A: Yes — `meta.json` may include an optional image entry with `type: file` (path to an image file) or `type: mermaid` (mermaid diagram). If absent, no image is rendered.
 - Q: How is ordering controlled for sizes and flavours? → A: Registry files control ordering: `sizes.json` inside each product folder lists sizes in display order; `flavours.json` inside each size folder lists flavours in display order. The `NNN-` numeric prefix is dropped from flavour folder names — folders are named with the shortname only.
 - Q: Is there a registry file pattern at every hierarchy level? → A: Yes — `products.json` (infra root), `sizes.json` (product folder), `flavours.json` (size folder). Each registry lists entries in the desired display order with their shortname and display name.
@@ -344,7 +344,7 @@ archive file is produced containing all generated PDFs.
 - Q: What language/runtime should the build scripts use? → A: Python 3.11+ (stdlib-only) — no external dependencies beyond the AsciiDoc/Mermaid toolchain. Python 3.11 is the minimum required version.
 - Q: What should the build do when a product has no sizes, a size has no flavours, or a flavour has no servers? → A: Fail hard for that product with a clear validation error message; continue processing all remaining products (consistent with FR-008a).
 - Q: How should Mermaid diagrams be rendered into PDFs? → A: asciidoctor-diagram plugin + local mermaid-cli (`mmdc`) — offline, no external network dependency.
-- Q: What should the build do when an explicitly referenced file is missing (product preamble/suffix, `theme.yml`)? → A: Missing product-specific preamble or suffix fails that product (errors collected per FR-008a); missing `theme.yml` fails the entire build immediately.
+- Q: What should the build do when an explicitly referenced file is missing (product prefix/suffix, `theme.yml`)? → A: Missing product-specific prefix or suffix fails that product (errors collected per FR-008a); missing `theme.yml` fails the entire build immediately.
 - Q: Should the build be a single entry-point script or separate per-stage scripts? → A: Single `build.py` entry point running all three stages sequentially via discrete internal functions. A `README.md` MUST include a `docker run` command for local builds.
 - Q: What happens if `infra/products.json` is missing or malformed? → A: Fail the entire build immediately with a clear error — same behaviour as a missing `theme.yml`. No archive is produced (FR-022).
 - Q: What happens if a product listed in `products.json` has no corresponding folder under `infra/`? → A: Fail that product with a clear error, continue processing remaining products — consistent with FR-008a (FR-023).
@@ -360,19 +360,19 @@ archive file is produced containing all generated PDFs.
   ```
   infra/
   ├── products.json                   ← product registry (ordered shortname + display name)
-  ├── preamble.adoc                   ← common preamble (all products)
+  ├── prefix.adoc                   ← common prefix (all products)
   ├── suffix.adoc                     ← common suffix (all products)
   └── {product-shortname}/
-      ├── meta.json                   ← preamble/suffix file paths (no display name)
+      ├── meta.json                   ← prefix/suffix file paths (no display name)
       ├── sizes.json                  ← size registry (ordered shortname + display name)
-      ├── preamble.adoc               ← product-specific preamble
+      ├── prefix.adoc               ← product-specific prefix
       ├── suffix.adoc                 ← product-specific suffix
       └── {size-shortname}/
           ├── meta.json               ← prefix/suffix text only (no display name)
           ├── flavours.json           ← flavour registry (ordered shortname + display name)
           └── {flavour-shortname}/    ← no NNN- prefix; order from flavours.json
               ├── meta.json           ← optional image entry only (no display name)
-              ├── preamble.adoc       ← optional flavour preamble
+              ├── prefix.adoc       ← optional flavour prefix
               ├── suffix.adoc         ← optional flavour suffix
               └── servers.json        ← server definitions for this flavour
   ```
@@ -384,9 +384,9 @@ archive file is produced containing all generated PDFs.
   plugin and local `mermaid-cli` (`mmdc`) is available in the build environment;
   toolchain installation is out of scope for this feature. Mermaid diagrams are
   rendered offline via `mmdc` — no external network access is required.
-- All preamble and suffix files are AsciiDoc (`.adoc`) and included verbatim
+- All prefix and suffix files are AsciiDoc (`.adoc`) and included verbatim
   into the generated AsciiDoc document before PDF conversion. Common files are
-  at `infra/preamble.adoc` and `infra/suffix.adoc`. Product-specific files are
+  at `infra/prefix.adoc` and `infra/suffix.adoc`. Product-specific files are
   stored within the product's folder and their paths are referenced from `meta.json`.
 - Both GitLab CI and GitHub Actions pipeline definitions must support the full
   three-step build as per the project constitution.

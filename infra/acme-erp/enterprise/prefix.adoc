@@ -1,0 +1,1 @@
+Enterprise deployment with integrated analytics for up to 1000 named users.

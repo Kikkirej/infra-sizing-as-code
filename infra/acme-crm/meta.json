@@ -1,1 +1,4 @@
-{ "preamble": "preamble.adoc", "suffix": "suffix.adoc" }
+{
+  "prefix": "prefix.adoc",
+  "suffix": "suffix.adoc"
+}

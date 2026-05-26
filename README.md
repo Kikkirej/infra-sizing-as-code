@@ -21,7 +21,7 @@ Generated PDFs and the `documents.zip` archive are written to `output/`.
 ## Adding Infrastructure Definitions
 
 1. Add an entry to `infra/products.json`
-2. Create `infra/{shortname}/` with `meta.json`, `sizes.json`, `preamble.adoc`, `suffix.adoc`
+2. Create `infra/{shortname}/` with `meta.json`, `sizes.json`, `prefix.adoc`, `suffix.adoc`
 3. Add sizes and flavours following the directory structure
 4. Run the build
 

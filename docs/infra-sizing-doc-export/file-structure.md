@@ -5,19 +5,19 @@
 ```
 infra/
 ├── products.json              # Registry of all products
-├── preamble.adoc              # Common preamble included in every document
+├── prefix.adoc              # Common prefix included in every document
 ├── suffix.adoc                # Common suffix included in every document
 └── {product-shortname}/
-    ├── meta.json              # Product metadata (preamble/suffix paths)
+    ├── meta.json              # Product metadata (prefix/suffix paths)
     ├── sizes.json             # Registry of sizes for this product
-    ├── preamble.adoc          # Product-specific preamble
+    ├── prefix.adoc          # Product-specific prefix
     ├── suffix.adoc            # Product-specific suffix
     └── {size-shortname}/
         ├── meta.json          # Size metadata (optional prefix/suffix text)
         ├── flavours.json      # Registry of flavours for this size
         └── {flavour-shortname}/
             ├── meta.json      # Flavour metadata (optional image)
-            ├── preamble.adoc  # Optional flavour preamble
+            ├── prefix.adoc  # Optional flavour prefix
             ├── suffix.adoc    # Optional flavour suffix
             └── servers.json   # List of servers for this flavour
 ```
@@ -58,7 +58,7 @@ infra/
 ### `infra/{product}/meta.json`
 
 ```json
-{ "preamble": "preamble.adoc", "suffix": "suffix.adoc" }
+{ "prefix": "prefix.adoc", "suffix": "suffix.adoc" }
 ```
 
 ### `infra/{product}/{size}/meta.json`

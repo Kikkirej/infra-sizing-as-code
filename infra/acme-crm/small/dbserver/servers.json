@@ -2,31 +2,103 @@
   {
     "system": "Primary Database",
     "count": 1,
-    "cpu": { "type": "static", "value": 16, "unit": "vCPU" },
+    "cpu": {
+      "type": "static",
+      "unit": "vCPU",
+      "value": 16.0
+    },
     "cpu_clocking": "3.4 GHz",
-    "memory": { "type": "static", "value": 64, "unit": "GB" },
+    "memory": {
+      "type": "static",
+      "unit": "GB",
+      "value": 64.0
+    },
     "disk": [
-      { "size": { "type": "static", "value": 100, "unit": "GB" }, "performance": "NVMe SSD",     "comment": "OS"   },
-      { "size": { "type": "static", "value": 1,   "unit": "TB" }, "performance": "NVMe SSD",     "comment": "Data" },
-      { "size": { "type": "static", "value": 500, "unit": "GB" }, "performance": "7200 RPM HDD", "comment": "Logs" }
+      {
+        "size": {
+          "type": "static",
+          "unit": "GB",
+          "value": 100.0
+        },
+        "performance": "NVMe SSD",
+        "comment": "OS"
+      },
+      {
+        "size": {
+          "type": "static",
+          "unit": "TB",
+          "value": 1.0
+        },
+        "performance": "NVMe SSD",
+        "comment": "Data"
+      },
+      {
+        "size": {
+          "type": "static",
+          "unit": "GB",
+          "value": 500.0
+        },
+        "performance": "7200 RPM HDD",
+        "comment": "Logs"
+      }
     ],
-    "network": ["2× 10GbE"],
-    "software": ["PostgreSQL 16"],
+    "network": [
+      "2× 10GbE"
+    ],
+    "software": [
+      "PostgreSQL 16"
+    ],
     "comment": ""
   },
   {
     "system": "Replica Database",
     "count": 1,
-    "cpu": { "type": "static", "value": 16, "unit": "vCPU" },
+    "cpu": {
+      "type": "static",
+      "unit": "vCPU",
+      "value": 16.0
+    },
     "cpu_clocking": "3.4 GHz",
-    "memory": { "type": "static", "value": 64, "unit": "GB" },
+    "memory": {
+      "type": "static",
+      "unit": "GB",
+      "value": 64.0
+    },
     "disk": [
-      { "size": { "type": "static", "value": 100, "unit": "GB" }, "performance": "NVMe SSD",     "comment": "OS"   },
-      { "size": { "type": "static", "value": 1,   "unit": "TB" }, "performance": "NVMe SSD",     "comment": "Data" },
-      { "size": { "type": "static", "value": 500, "unit": "GB" }, "performance": "7200 RPM HDD", "comment": "Logs" }
+      {
+        "size": {
+          "type": "static",
+          "unit": "GB",
+          "value": 100.0
+        },
+        "performance": "NVMe SSD",
+        "comment": "OS"
+      },
+      {
+        "size": {
+          "type": "static",
+          "unit": "TB",
+          "value": 1.0
+        },
+        "performance": "NVMe SSD",
+        "comment": "Data"
+      },
+      {
+        "size": {
+          "type": "static",
+          "unit": "GB",
+          "value": 500.0
+        },
+        "performance": "7200 RPM HDD",
+        "comment": "Logs"
+      }
     ],
-    "network": ["2× 10GbE"],
-    "software": ["PostgreSQL 16"],
+    "network": [
+      "2× 10GbE"
+    ],
+    "software": [
+      "PostgreSQL 16"
+    ],
     "comment": "Hot standby"
   }
 ]

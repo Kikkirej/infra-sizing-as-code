@@ -1,4 +1,10 @@
 [
-  { "shortname": "standard",   "display_name": "Standard (250 Users)"    },
-  { "shortname": "enterprise", "display_name": "Enterprise (1000 Users)" }
+  {
+    "shortname": "standard",
+    "display_name": "Standard (250 Users)"
+  },
+  {
+    "shortname": "enterprise",
+    "display_name": "Enterprise (1000 Users)"
+  }
 ]

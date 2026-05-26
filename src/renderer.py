@@ -84,9 +84,9 @@ def render_flavour_section(
             mmd_content = Path(base).read_text()
             parts.append("[mermaid]\n----\n" + mmd_content + "\n----\n")
 
-    if flavour.has_preamble:
+    if flavour.has_prefix:
         parts.append(
-            f"include::infra/{product_shortname}/{size_shortname}/{flavour.shortname}/preamble.adoc[]\n"
+            f"include::infra/{product_shortname}/{size_shortname}/{flavour.shortname}/prefix.adoc[]\n"
         )
 
     parts.append(render_server_table(flavour))
@@ -124,8 +124,8 @@ def render_size_section(
 def render_product_document(product: Product, build_date: str = "") -> str:
     parts = [render_document_header(product)]
 
-    parts.append("include::infra/preamble.adoc[]\n")
-    parts.append(f"include::{product.preamble_path}[]\n")
+    parts.append("include::infra/prefix.adoc[]\n")
+    parts.append(f"include::{product.prefix_path}[]\n")
 
     is_single_size = len(product.sizes) == 1
     for size in product.sizes:

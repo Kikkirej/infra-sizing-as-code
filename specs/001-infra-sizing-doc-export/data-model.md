@@ -94,7 +94,7 @@ and a formula-based dynamic value.
 **Shape**:
 ```json
 {
-  "preamble": "preamble.adoc",
+  "prefix": "prefix.adoc",
   "suffix": "suffix.adoc"
 }
 ```
@@ -102,7 +102,7 @@ and a formula-based dynamic value.
 **Fields**:
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| preamble | string | yes | Relative path to product-specific preamble `.adoc` |
+| prefix | string | yes | Relative path to product-specific prefix `.adoc` |
 | suffix | string | yes | Relative path to product-specific suffix `.adoc` |
 
 **Validation rules**:
@@ -410,7 +410,7 @@ class Flavour:
     display_name: str
     servers: list[Server]          # min 1
     image: FlavourImage | None = None
-    has_preamble: bool = False
+    has_prefix: bool = False
     has_suffix: bool = False
 
 @dataclass
@@ -426,7 +426,7 @@ class Product:
     shortname: str
     display_name: str
     sizes: list[Size]              # min 1
-    preamble_path: str = ""
+    prefix_path: str = ""
     suffix_path: str = ""
 ```
 
@@ -443,5 +443,5 @@ class Product:
 | Size has no flavours | Per product | Product fails, continue |
 | Flavour has no servers | Per product | Product fails, continue |
 | Server has empty disk list | Per product | Product fails, continue |
-| Preamble/suffix file missing | Per product | Product fails, continue |
+| Prefix/suffix file missing | Per product | Product fails, continue |
 | asciidoctor-pdf non-zero exit | Per product | Product fails, continue |

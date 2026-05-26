@@ -81,11 +81,11 @@ Dockerfile                        # asciidoctor/docker-asciidoctor + Python 3.11
 
 infra/
 ├── products.json                 # Registry: [{shortname, display_name}]
-├── preamble.adoc                 # Global document preamble (include at top of every product doc)
+├── prefix.adoc                 # Global document prefix (include at top of every product doc)
 ├── suffix.adoc                   # Global document suffix (include at bottom)
 └── {product-shortname}/
-      ├── meta.json               # {preamble, suffix} file references
-      ├── preamble.adoc
+      ├── meta.json               # {prefix, suffix} file references
+      ├── prefix.adoc
       ├── suffix.adoc
       ├── sizes.json              # [{shortname, display_name}]
       └── {size-shortname}/

@@ -65,9 +65,9 @@ resolve relative to the repo root.
 :revdate: {YYYY-MM-DD}
 :nofooter:
 
-include::infra/preamble.adoc[]
+include::infra/prefix.adoc[]
 
-include::infra/{product_shortname}/preamble.adoc[]
+include::infra/{product_shortname}/prefix.adoc[]
 
 // — repeated per size (omit == heading if exactly one size: FR-004) —
 == {size_display_name}
@@ -86,8 +86,8 @@ image::infra/{product}/{size}/{flavour}/{value}[]
 {content of .mmd file}
 ----
 
-// Optional flavour preamble
-include::infra/{product}/{size}/{flavour}/preamble.adoc[]
+// Optional flavour prefix
+include::infra/{product}/{size}/{flavour}/prefix.adoc[]
 
 // Server table — 5 columns; no separate Count/Network/Software columns
 [cols="15,14,13,43,33",options="header"]
@@ -320,7 +320,7 @@ def run_build(repo_root: Path) -> int:
 - Product folder missing (FR-023)
 - Server with empty disk list (FR-024)
 - Product has no sizes / size has no flavours / flavour has no servers
-- Missing preamble/suffix file referenced in meta.json (FR-015a)
+- Missing prefix/suffix file referenced in meta.json (FR-015a)
 - asciidoctor-pdf non-zero exit (Stage 2 failure)
 
 **Rationale**: Centralised error accumulation matches FR-008a exactly.

@@ -237,20 +237,20 @@ def test_render_size_section_includes_heading_when_multiple():
 
 # ── render_flavour_section ────────────────────────────────────────────────────
 
-def test_render_flavour_section_no_preamble_no_suffix():
-    flavour = _make_flavour(has_preamble=False, has_suffix=False)
+def test_render_flavour_section_no_prefix_no_suffix():
+    flavour = _make_flavour(has_prefix=False, has_suffix=False)
     section = render_flavour_section(flavour, "product-a", "size-s")
     assert "include::" not in section
 
 
-def test_render_flavour_section_with_preamble():
-    flavour = _make_flavour(has_preamble=True, has_suffix=False)
+def test_render_flavour_section_with_prefix():
+    flavour = _make_flavour(has_prefix=True, has_suffix=False)
     section = render_flavour_section(flavour, "product-a", "size-s")
-    assert "include::infra/product-a/size-s/flavour-f/preamble.adoc[]" in section
+    assert "include::infra/product-a/size-s/flavour-f/prefix.adoc[]" in section
 
 
 def test_render_flavour_section_with_suffix():
-    flavour = _make_flavour(has_preamble=False, has_suffix=True)
+    flavour = _make_flavour(has_prefix=False, has_suffix=True)
     section = render_flavour_section(flavour, "product-a", "size-s")
     assert "include::infra/product-a/size-s/flavour-f/suffix.adoc[]" in section
 
@@ -266,12 +266,12 @@ def test_render_product_document_section_order():
             display_name="Small",
             flavours=[_make_flavour()],
         )],
-        preamble_path="infra/product-a/preamble.adoc",
+        prefix_path="infra/product-a/prefix.adoc",
         suffix_path="infra/product-a/suffix.adoc",
     )
     doc = render_product_document(product)
-    assert doc.index("include::infra/preamble.adoc[]") < doc.index("include::infra/product-a/preamble.adoc[]")
-    assert doc.index("include::infra/product-a/preamble.adoc[]") < doc.index("=== F")
+    assert doc.index("include::infra/prefix.adoc[]") < doc.index("include::infra/product-a/prefix.adoc[]")
+    assert doc.index("include::infra/product-a/prefix.adoc[]") < doc.index("=== F")
     assert doc.index("=== F") < doc.index("include::infra/product-a/suffix.adoc[]")
     assert doc.index("include::infra/product-a/suffix.adoc[]") < doc.index("include::infra/suffix.adoc[]")
 
@@ -290,15 +290,15 @@ def test_render_product_document_per_product_includes():
                     servers=[_make_server()],
                 )],
             )],
-            preamble_path=f"infra/{shortname}/preamble.adoc",
+            prefix_path=f"infra/{shortname}/prefix.adoc",
             suffix_path=f"infra/{shortname}/suffix.adoc",
         )
 
     doc_a = render_product_document(_product("product-a", "size-s", "flavour-f"))
     doc_b = render_product_document(_product("product-b", "size-l", "flavour-g"))
 
-    assert "include::infra/product-a/preamble.adoc[]" in doc_a
+    assert "include::infra/product-a/prefix.adoc[]" in doc_a
     assert "include::infra/product-a/suffix.adoc[]" in doc_a
-    assert "include::infra/product-b/preamble.adoc[]" in doc_b
+    assert "include::infra/product-b/prefix.adoc[]" in doc_b
     assert "include::infra/product-b/suffix.adoc[]" in doc_b
-    assert "include::infra/product-a/preamble.adoc[]" not in doc_b
+    assert "include::infra/product-a/prefix.adoc[]" not in doc_b

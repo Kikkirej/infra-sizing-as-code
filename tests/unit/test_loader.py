@@ -174,10 +174,10 @@ def test_load_product_missing_sizes_json_returns_none(tmp_path):
     from src.loader import load_product
 
     (tmp_path / "infra" / "product-x").mkdir(parents=True)
-    (tmp_path / "infra" / "product-x" / "preamble.adoc").write_text("")
+    (tmp_path / "infra" / "product-x" / "prefix.adoc").write_text("")
     (tmp_path / "infra" / "product-x" / "suffix.adoc").write_text("")
     (tmp_path / "infra" / "product-x" / "meta.json").write_text(
-        json.dumps({"preamble": "preamble.adoc", "suffix": "suffix.adoc"})
+        json.dumps({"prefix": "prefix.adoc", "suffix": "suffix.adoc"})
     )
     result = load_product(tmp_path, "product-x", "Product X")
     assert result is None
@@ -188,26 +188,27 @@ def test_load_product_error_isolation(tmp_path):
 
     # Bad product: empty sizes.json
     (tmp_path / "infra" / "bad-product").mkdir(parents=True)
-    (tmp_path / "infra" / "bad-product" / "preamble.adoc").write_text("")
+    (tmp_path / "infra" / "bad-product" / "prefix.adoc").write_text("")
     (tmp_path / "infra" / "bad-product" / "suffix.adoc").write_text("")
     (tmp_path / "infra" / "bad-product" / "meta.json").write_text(
-        json.dumps({"preamble": "preamble.adoc", "suffix": "suffix.adoc"})
+        json.dumps({"prefix": "prefix.adoc", "suffix": "suffix.adoc"})
     )
     (tmp_path / "infra" / "bad-product" / "sizes.json").write_text("[]")
 
     # Good product: complete tree with TypedValue
     (tmp_path / "infra" / "good-product").mkdir(parents=True)
-    (tmp_path / "infra" / "good-product" / "preamble.adoc").write_text("")
+    (tmp_path / "infra" / "good-product" / "prefix.adoc").write_text("")
     (tmp_path / "infra" / "good-product" / "suffix.adoc").write_text("")
     (tmp_path / "infra" / "good-product" / "meta.json").write_text(
-        json.dumps({"preamble": "preamble.adoc", "suffix": "suffix.adoc"})
+        json.dumps({"prefix": "prefix.adoc", "suffix": "suffix.adoc"})
     )
     (tmp_path / "infra" / "good-product" / "sizes.json").write_text(json.dumps(
         [{"shortname": "size-s", "display_name": "Small"}]
     ))
     size_dir = tmp_path / "infra" / "good-product" / "size-s"
     size_dir.mkdir()
-    (size_dir / "meta.json").write_text(json.dumps({"prefix_text": "", "suffix_text": ""}))
+    (size_dir / "prefix.adoc").write_text("")
+    (size_dir / "suffix.adoc").write_text("")
     (size_dir / "flavours.json").write_text(json.dumps(
         [{"shortname": "flavour-f", "display_name": "F"}]
     ))

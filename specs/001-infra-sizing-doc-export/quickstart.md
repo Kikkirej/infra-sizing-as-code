@@ -56,13 +56,13 @@ typical deployment where different scale tiers add components.
 ```
 infra/
 ├── products.json
-├── preamble.adoc
+├── prefix.adoc
 ├── suffix.adoc
 │
 ├── acme-crm/
 │   ├── meta.json
 │   ├── sizes.json
-│   ├── preamble.adoc
+│   ├── prefix.adoc
 │   ├── suffix.adoc
 │   ├── small/
 │   │   ├── meta.json
@@ -104,7 +104,7 @@ infra/
 └── acme-erp/
     ├── meta.json
     ├── sizes.json
-    ├── preamble.adoc
+    ├── prefix.adoc
     ├── suffix.adoc
     ├── standard/
     │   ├── meta.json
@@ -204,12 +204,12 @@ infra/
 
 **`infra/acme-crm/meta.json`**:
 ```json
-{ "preamble": "preamble.adoc", "suffix": "suffix.adoc" }
+{ "prefix": "prefix.adoc", "suffix": "suffix.adoc" }
 ```
 
 **`infra/acme-erp/meta.json`**:
 ```json
-{ "preamble": "preamble.adoc", "suffix": "suffix.adoc" }
+{ "prefix": "prefix.adoc", "suffix": "suffix.adoc" }
 ```
 
 **`infra/acme-crm/small/meta.json`** — size prefix/suffix text:
@@ -459,14 +459,14 @@ follow the server table:
 |===
 ```
 
-### Preamble and Suffix Files
+### Prefix and Suffix Files
 
 Create placeholder `.adoc` files for the common sections and each product:
 
 ```bash
-touch infra/preamble.adoc infra/suffix.adoc
-touch infra/acme-crm/preamble.adoc infra/acme-crm/suffix.adoc
-touch infra/acme-erp/preamble.adoc infra/acme-erp/suffix.adoc
+touch infra/prefix.adoc infra/suffix.adoc
+touch infra/acme-crm/prefix.adoc infra/acme-crm/suffix.adoc
+touch infra/acme-erp/prefix.adoc infra/acme-erp/suffix.adoc
 ```
 
 ---
@@ -494,7 +494,7 @@ output/
 
 The `acme-crm.pdf` has three size sections (Small / Medium / Large), each with
 its own flavour subsections and server tables. The `acme-erp.pdf` has two size
-sections (Standard / Enterprise). Both PDFs share the same `infra/preamble.adoc`
+sections (Standard / Enterprise). Both PDFs share the same `infra/prefix.adoc`
 and `infra/suffix.adoc` content.
 
 ---
@@ -509,7 +509,7 @@ and `infra/suffix.adoc` content.
 | `ERROR [acme-crm]: no sizes defined` | `sizes.json` empty or missing entries | Add at least one size |
 | `ERROR [acme-crm]: no flavours defined for size 'small'` | `flavours.json` empty | Add at least one flavour |
 | `ERROR [acme-crm]: server has no disk partitions` | `disk` array empty in `servers.json` | Add at least one partition |
-| `ERROR [acme-crm]: preamble file not found` | Path in `meta.json` doesn't exist on disk | Create the referenced `.adoc` file |
+| `ERROR [acme-crm]: prefix file not found` | Path in `meta.json` doesn't exist on disk | Create the referenced `.adoc` file |
 
 ---
 
