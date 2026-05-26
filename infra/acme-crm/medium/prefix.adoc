@@ -1,0 +1,1 @@
+Scales to 500 concurrent users with dedicated caching.
