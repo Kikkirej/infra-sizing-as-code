@@ -1,4 +1,10 @@
 [
-  { "shortname": "acme-crm", "display_name": "ACME CRM Platform" },
-  { "shortname": "acme-erp", "display_name": "ACME ERP Platform" }
+  {
+    "shortname": "acme-crm",
+    "display_name": "ACME CRM Platform"
+  },
+  {
+    "shortname": "acme-erp",
+    "display_name": "ACME ERP Platform"
+  }
 ]

@@ -1,5 +1,14 @@
 [
-  { "shortname": "appserver",   "display_name": "Application Servers" },
-  { "shortname": "dbserver",    "display_name": "Database Servers"    },
-  { "shortname": "cacheserver", "display_name": "Cache Servers"       }
+  {
+    "shortname": "appserver",
+    "display_name": "Application Servers"
+  },
+  {
+    "shortname": "dbserver",
+    "display_name": "Database Servers"
+  },
+  {
+    "shortname": "cacheserver",
+    "display_name": "Cache Servers"
+  }
 ]

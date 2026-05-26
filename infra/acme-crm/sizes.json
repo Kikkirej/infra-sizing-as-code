@@ -1,5 +1,14 @@
 [
-  { "shortname": "small",  "display_name": "Small (100 Users)"  },
-  { "shortname": "medium", "display_name": "Medium (500 Users)" },
-  { "shortname": "large",  "display_name": "Large (2000 Users)" }
+  {
+    "shortname": "small",
+    "display_name": "Small (100 Users)"
+  },
+  {
+    "shortname": "medium",
+    "display_name": "Medium (500 Users)"
+  },
+  {
+    "shortname": "large",
+    "display_name": "Large (2000 Users)"
+  }
 ]
