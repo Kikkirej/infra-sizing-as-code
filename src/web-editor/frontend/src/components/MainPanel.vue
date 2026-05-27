@@ -7,6 +7,7 @@
     <ServerEdit v-else-if="node.type === 'server'" :node="node.data" :productSn="node.product" :sizeSn="node.size" :flavourSn="node.flavour" :serverIdx="node.serverIdx" />
     <AdocEditor v-else-if="node.type === 'adoc'" :path="node.path" />
     <ThemeEditor v-else-if="node.type === 'theme'" />
+    <VersioningPanel v-else-if="node.type === 'versions'" :productSn="node.product" />
     <div v-else class="unknown">Unknown node type: {{ node.type }}</div>
   </div>
 </template>
@@ -22,6 +23,7 @@ import FlavourEdit from './edit/FlavourEdit.vue'
 import ServerEdit from './edit/ServerEdit.vue'
 import AdocEditor from './edit/AdocEditor.vue'
 import ThemeEditor from './edit/ThemeEditor.vue'
+import VersioningPanel from './edit/VersioningPanel.vue'
 
 const store = useTreeStore()
 const unitsStore = useUnitsStore()

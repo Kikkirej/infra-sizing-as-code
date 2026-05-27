@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from services import state_store
 from services.writer import write_all
 from models.state import ChangeState
+from models.versioning import VersionNoteIn
 
 router = APIRouter()
 REPO_ROOT = Path(os.environ.get("REPO_ROOT", "."))
@@ -83,6 +84,7 @@ def git_changes():
 class CommitBody(BaseModel):
     message: str
     push: bool = True
+    version_notes: list[VersionNoteIn] = []
 
 
 def _validate_commit(state) -> list[str]:
@@ -119,6 +121,35 @@ def commit(body: CommitBody):
     errors = _validate_commit(state)
     if errors:
         raise HTTPException(422, "Commit blocked: " + "; ".join(errors))
+
+    # Append version notes to wip.json files before writing
+    if body.version_notes:
+        import json as _json
+        from pathlib import Path as _Path
+        for i, note in enumerate(body.version_notes):
+            wip_path = REPO_ROOT / "infra" / note.product_shortname / "versioning" / "wip.json"
+            if wip_path.exists():
+                try:
+                    raw = _json.loads(wip_path.read_text())
+                    raw.setdefault("entries", []).append({
+                        "author": note.author,
+                        "date": note.date,
+                        "notes": note.notes,
+                    })
+                    wip_path.write_text(_json.dumps(raw, indent=2, ensure_ascii=False))
+                except Exception as exc:
+                    raise HTTPException(422, f"version_notes[{i}]: failed to update wip.json: {exc}")
+            else:
+                # Create a minimal wip.json if the product exists
+                product_dir = REPO_ROOT / "infra" / note.product_shortname
+                if product_dir.is_dir():
+                    wip_path.parent.mkdir(parents=True, exist_ok=True)
+                    raw = {"version_name": "", "entries": [{
+                        "author": note.author,
+                        "date": note.date,
+                        "notes": note.notes,
+                    }]}
+                    wip_path.write_text(_json.dumps(raw, indent=2, ensure_ascii=False))
 
     write_all(state, REPO_ROOT)
 
