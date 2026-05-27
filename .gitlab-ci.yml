@@ -21,7 +21,7 @@ web-editor-backend:
 
 web-editor-frontend:
   stage: web-editor
-  image: node:20-alpine
+  image: node:24-alpine
   script:
     - cd src/web-editor/frontend
     - npm ci
