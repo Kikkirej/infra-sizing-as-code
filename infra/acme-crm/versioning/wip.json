@@ -1,0 +1,20 @@
+{
+  "version_name": "1.1.0",
+  "entries": [
+    {
+      "author": "Smith, John",
+      "date": "2026-05-01",
+      "notes": "copied from previous version"
+    },
+    {
+      "author": "Smith, John; Doe, Jane",
+      "date": "2026-05-20",
+      "notes": "Increased memory for application tier to 64 GB"
+    },
+    {
+      "author": "Doe, Jane",
+      "date": "2026-05-27",
+      "notes": "Added HA configuration for database tier"
+    }
+  ]
+}
